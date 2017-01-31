@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/helixmedia/db" VERSION="2013073101" COMMENT="XMLDB file for Moodle mod/helixmedia"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd">
+  <TABLES>
+    <TABLE NAME="helixmedia" COMMENT="This table contains Helix Media activities instances" NEXT="helixmedia_pre">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="preid" />
+        <FIELD NAME="preid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Pre-allocated id" NEXT="course" PREVIOUS="id" />
+        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course helixmedia activity belongs to" PREVIOUS="preid" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="name field for moodle instances" PREVIOUS="course" NEXT="intro"/>
+        <FIELD NAME="intro" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="General introduction of the helixmedia activity" PREVIOUS="name" NEXT="introformat"/>
+        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Format of the intro field (MOODLE, HTML, MARKDOWN...)" PREVIOUS="intro" NEXT="timecreated"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="introformat" NEXT="timemodified"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="timecreated" NEXT="launchcontainer"/>
+        <FIELD NAME="launchcontainer" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Launch external tool in a pop-up" PREVIOUS="timemodified" NEXT="debuglaunch"/>
+        <FIELD NAME="debuglaunch" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Enable the debug-style launch which pauses before auto-submit" PREVIOUS="launchcontainer" NEXT="showtitlelaunch"/>
+        <FIELD NAME="showtitlelaunch" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="debuglaunch" NEXT="showdescriptionlaunch"/>
+        <FIELD NAME="showdescriptionlaunch" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="showtitlelaunch" NEXT="servicesalt"/>
+        <FIELD NAME="servicesalt" TYPE="char" LENGTH="40" NOTNULL="false" SEQUENCE="false" PREVIOUS="showdescriptionlaunch" NEXT="icon"/>
+        <FIELD NAME="icon" TYPE="text" NOTNULL="false" SEQUENCE="false" PREVIOUS="servicesalt" NEXT="secureicon"/>
+        <FIELD NAME="secureicon" TYPE="text" NOTNULL="false" SEQUENCE="false" PREVIOUS="icon" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="course" UNIQUE="false" FIELDS="course" NEXT="preid" />
+        <INDEX NAME="preid" UNIQUE="false" FIELDS="preid" PREVIOUS="course" />
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="helixmedia_pre" COMMENT="This table contains Helix Media id pre-allocation" PREVIOUS="helixmedia">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" SEQUENCE="true" NOTNULL="true" NEXT="timecreated"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="id" NEXT="servicesalt"/>
+        <FIELD NAME="servicesalt" TYPE="char" LENGTH="40" NOTNULL="false" SEQUENCE="false" PREVIOUS="timecreated" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
