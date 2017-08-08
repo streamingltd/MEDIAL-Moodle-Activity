@@ -242,8 +242,10 @@ switch ($type) {
         break;
     case HML_LAUNCH_EDIT:
     case HML_LAUNCH_TINYMCE_EDIT:
-    case HML_LAUNCH_ATTO_EDIT:
         $cap='mod/helixmedia:addinstance';
+        break;
+    case HML_LAUNCH_ATTO_EDIT:
+        $cap='atto/helixatto:visible';
         break;
     case HML_LAUNCH_STUDENT_SUBMIT:
     case HML_LAUNCH_STUDENT_SUBMIT_PREVIEW:

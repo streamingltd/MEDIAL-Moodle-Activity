@@ -493,10 +493,14 @@ function helixmedia_get_ims_role($user, $cmid, $courseid) {
         //a real Helixmedia instance
         $coursecontext = context_course::instance($courseid);
 
-        if (has_capability('moodle/course:manageactivities', $coursecontext)) {
+        if (has_capability('atto/helixatto:visible', $coursecontext)) {
             array_push($roles, 'Instructor');
         } else {
-            array_push($roles, 'Learner');
+            if (has_capability('moodle/course:manageactivities', $coursecontext)) {
+                array_push($roles, 'Instructor');
+            } else {
+                array_push($roles, 'Learner');
+            }
         }
     } else {
         $context = context_module::instance($cmid);

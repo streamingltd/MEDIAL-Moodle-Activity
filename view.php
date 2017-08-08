@@ -67,15 +67,7 @@ if ($launchcontainer == LTI_LAUNCH_CONTAINER_REPLACE_MOODLE_WINDOW) {
 
 require_login($course);
 
-$event = \mod_helixmedia\event\course_module_viewed::create(array(
-    'objectid' => $hmli->id,
-    'context' => $context
-));
-$event->add_record_snapshot('course_modules', $cm);
-$event->add_record_snapshot('course', $course);
-$event->add_record_snapshot('helixmedia', $hmli);
-$event->trigger();
-
+helixmedia_view($hmli, $course, $cm, $context);
 
 $pagetitle = strip_tags($course->shortname.': '.format_string($hmli->name));
 $PAGE->set_title($pagetitle);

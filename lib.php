@@ -334,7 +334,7 @@ function helixmedia_uninstall() {
  * @since Moodle 3.0
  */
 
-function helixmedia_view($page, $course, $cm, $context) {
+function helixmedia_view($hml, $course, $cm, $context) {
     // Trigger course_module_viewed event.
     $params = array(
         'context' => $context,
@@ -347,7 +347,6 @@ function helixmedia_view($page, $course, $cm, $context) {
     $event->add_record_snapshot('helixmedia', $hml);
     $event->trigger();
 
-    // Completion.
     $completion = new completion_info($course);
     $completion->set_module_viewed($cm);
 }
