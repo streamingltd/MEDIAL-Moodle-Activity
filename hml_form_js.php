@@ -9,8 +9,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-header("Content-Type: text/javascript");
+
 require_once("../../config.php");
+header("Content-Type: text/javascript");
 global $CFG;
 ?>
 var activity_dialog;
@@ -25,7 +26,7 @@ function checkStatus()
     else
         xmlDoc = new XMLHttpRequest();
 
-    var params="resource_link_id="+resID+"&user_id="+userID;
+    var params="resource_link_id="+resID+"&user_id="+userID+"&oauth_consumer_key="+oauthConsumerKey;
     xmlDoc.open("POST", statusURL , false);
     xmlDoc.setRequestHeader("Content-type","application/x-www-form-urlencoded");
     xmlDoc.send(params);
@@ -130,22 +131,17 @@ if (typeof com.uol == 'undefined') {
         var wHeight=0;
         var top;
 
-        if( typeof( window.innerWidth ) == 'number' ) {
-            //Non-IE
-            wWidth=window.innerWidth;
-            wHeight=window.innerHeight;
-            top=window.pageYOffset;
-        }
-        else if( document.documentElement &&
-            ( document.documentElement.clientWidth || document.documentElement.clientHeight ) ) {
-            //IE 6+ in 'standards compliant mode'
-            wWidth=document.documentElement.clientWidth;
-            wHeight=document.documentElement.clientHeight;
-            top=document.documentElement.scrollTop;
-        }
+        wWidth=document.documentElement.clientWidth;
+        wHeight=document.documentElement.clientHeight;
+        top=document.documentElement.scrollTop;
 
-        this.width = wWidth-30;
-        this.height = wHeight-100;
+        if (this.detectMobile()) {
+            this.width = wWidth;
+            this.height = wHeight;
+        } else {
+            this.width = wWidth-6;
+            this.height = wHeight;
+        }
 
         if (this.width > 1000) {
             this.width = 1000;
@@ -154,26 +150,31 @@ if (typeof com.uol == 'undefined') {
             this.height = 1400;
         }
 
-        if (this.height < 480) {
-            this.height = 480;
-            this.y = top;
-        } else {
-            this.y = top + 50;
-        }
-
-        if (this.width < 770) {
-            this.width = 770;
-        }
-
+        this.y = top;
         this.x=(wWidth-this.width)/2;
+
         if (this.x>8) {
             this.x=this.x-8;
         } else {
             this.x=0;
         }
     },
- 
- 
+
+    this.PopupHandler.prototype.detectMobile = function() { 
+        if( navigator.userAgent.match(/Android/i)
+            || navigator.userAgent.match(/webOS/i)
+            || navigator.userAgent.match(/iPhone/i)
+            || navigator.userAgent.match(/iPad/i)
+            || navigator.userAgent.match(/iPod/i)
+            || navigator.userAgent.match(/BlackBerry/i)
+            || navigator.userAgent.match(/Windows Phone/i)
+        ){
+            return true;
+        } else {
+            return false;
+        }
+},
+
     /**
      * Method to call load the form
      */
@@ -207,10 +208,9 @@ if (typeof com.uol == 'undefined') {
                     y:e.argument[3],
                     modal: true,
                     width: e.argument[0] + 'px',
-                    top:'100px',
                     height: e.argument[1] + 'px',
                     iframe: true,
-                    zIndex: 2000,
+                    zIndex: 9999,
                     fixedcenter: false,
                     visible: false,
                     close: true,

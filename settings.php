@@ -13,6 +13,14 @@ require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
 
 
+if ($PAGE->url->get_param("section")=="modsettinghelixmedia") {
+    require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+    $settings->add(new admin_setting_heading('helixmedia/version_check', get_string("version_check_title", "mod_helixmedia"),
+        helixmedia_version_check()));
+}
+
+$settings->add(new admin_setting_heading('helixmedia/settings_header', get_string("lti_settings_title", "mod_helixmedia"),''));
+
 $settings->add(new admin_setting_configtext('helixmedia/launchurl', get_string("launch_url", "helixmedia"),
                    get_string("launch_url2", "helixmedia"), "", PARAM_URL));
 
@@ -49,9 +57,12 @@ $settings->add(new admin_setting_configtextarea('helixmedia/custom_params', get_
 $settings->add(new admin_setting_configtext('helixmedia/modal_delay', get_string("modal_delay", "helixmedia"),
                    get_string("modal_delay2", "helixmedia"), 0, PARAM_INT));
 
-$settings->add(new admin_setting_heading('helixmedia/repo_migrate', get_string("repo_migrate_title", "mod_helixmedia"),
-  "<p>".get_string("repo_migrate_message", "mod_helixmedia")."</p>".
-  "<p style='text-align:center;font-weight:bold;'>".
-  "<a href='".$CFG->wwwroot."/mod/helixmedia/migrate.php'>".get_string("repo_migrate_link", "mod_helixmedia")."</a></p>"));
+if ($PAGE->url->get_param("section")=="modsettinghelixmedia") {
+
+    $settings->add(new admin_setting_heading('helixmedia/repo_migrate', get_string("repo_migrate_title", "mod_helixmedia"),
+        "<p>".get_string("repo_migrate_message", "mod_helixmedia")."</p>".
+        "<p style='text-align:center;font-weight:bold;'>".
+        "<a href='".$CFG->wwwroot."/mod/helixmedia/migrate.php'>".get_string("repo_migrate_link", "mod_helixmedia")."</a></p>"));
+}
 
 ?>

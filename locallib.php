@@ -46,6 +46,9 @@ define('HML_LAUNCH_ATTO_VIEW', 16);
 
 /**Note next ID should be 18**/
 
+/** For version check**/
+define('MEDIAL_MIN_VERSION','5.0.052');
+
 
 /**
  * Prints a Helix Media activity
@@ -283,6 +286,10 @@ function helixmedia_get_assign_into_refs($assign_id) {
 
 function helixmedia_curl_post_launch_html($params, $endpoint) {
     global $CFG;
+    $mod_config=get_config("helixmedia");
+    $params['oauth_consumer_key'] = $mod_config->consumer_key;
+    //$params[''] = $mod_config->shared_secret;
+    //$params[''] = $mod_config->org_id;
 
     set_time_limit(0);
     $ch = curl_init($endpoint);
@@ -297,6 +304,7 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); 
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
     $cookies_file=$CFG->dataroot.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR."helixmedia-curl-cookies-".microtime(true).".tmp";
     while(file_exists($cookies_file))
@@ -586,22 +594,25 @@ function helixmedia_get_modal_dialog($pre_id, $params_thumb, $params_link, $styl
                 get_string('choosemedia_title', 'helixmedia').'" title="" /></a>'.
                 '</td></tr></table>';
         } else {
-            $html='<table style="'.$style.'"><tr><td>'.
+            $html='<div style="display:flex;flex-wrap:wrap;'.$style.'"><div style="order:0;">'.
                 '<iframe id="'.$frameid.'" style="border-width:0px;width:200px;height:128px;" scrolling="no" frameborder="0" '.
                 'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.htmlspecialchars($params_thumb).'"></iframe>'.
-                '</td><td style="vertical-align:middle;">'.
+                '</div><div style="order:1;">'.
                 '<a class="pop_up_selector_link" href="'.$CFG->wwwroot.'/mod/helixmedia/container.php?'.htmlspecialchars($params_link).'">'.
-                '<img src="'.$CFG->wwwroot.'/mod/helixmedia/icons/'.$linkimage.'" width="'.$linkimagewidth.'" height="'.$linkimageheight.'" alt="'.
-                get_string('choosemedia_title', 'helixmedia').'" title="" /></a>'.
-                '</td></tr></table>';
+                '<img src="'.$CFG->wwwroot.'/mod/helixmedia/icons/'.$linkimage.'" alt="'.
+                get_string('choosemedia_title', 'helixmedia').'" title="" '.
+                'style="width:'.$linkimagewidth.';height:'.$linkimageheight.';margin-top:50px;" /></a>'.
+                '</div></div>';
         }
     }
+    $mod_config=get_config("helixmedia");
 
     $html.='<script type="text/javascript">'.
         'var thumburl="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.$params_thumb.'";'.
         'var resID='.$pre_id.';'.
         'var userID='.$USER->id.';'.
         'var statusURL="'.helixmedia_get_status_url().'";'.
+        'var oauthConsumerKey = "'.$mod_config->consumer_key.'";'.
         'var doStatusCheck='.$statusCheck.';'.
         '</script>';
 
@@ -625,16 +636,62 @@ function helixmedia_get_instance_size($preid, $course) {
     $url = trim(get_config("helixmedia", "launchurl"));
     $pos = str_contains($url, "/Launch", true);
     $url = substr($url, 0, $pos)."PlayerWidth";
-    $retdata = helixmedia_curl_post_launch_html(array("context_id" => $course, "resource_link_id" => $preid), $url);
+    $retdata = helixmedia_curl_post_launch_html(array("context_id" => $course, "resource_link_id" => $preid, "include_height" => "Y"), $url);
 
-    return intval($retdata);
+    $parts = explode(":", $retdata);
+    // If there is more than one part, then MEDIAL undersatnds the include_height param
+    if (count($parts)>1) {
+        $vals=new stdclass();
+        $vals->width = intval($parts[0]);
+        $vals->height = intval($parts[1]);
+        if (count($parts)>1 && $parts[2] == 'Y') {
+            $vals->audioonly = true;
+        } else {
+            $vals->audioonly = false;
+        }
+        return $vals;
+    }
+
+    // Old version of MEDIAL, return standard data
+    $vals=new stdclass();
+    $vals->width = intval($retdata);
+    $vals->height = -1;
+    $vals->audioonly = false;
+    return $vals;
 }
 
 function helixmedia_get_status_url() {
+    return helixmedia_get_alturl("SessionStatus");
+}
+
+function helixmedia_get_upload_url() {
+    return helixmedia_get_alturl("UploadStatus");
+}
+
+function helixmedia_get_alturl($alt) {
     $status_url = trim(get_config("helixmedia", "launchurl"));
     $pos = str_contains($status_url, "/Launch", true);
-    return substr($status_url, 0, $pos)."SessionStatus";
+    return substr($status_url, 0, $pos).$alt;
 }
+
+function helixmedia_is_preid_empty($preid, $as, $userid) {
+    global $CFG;
+
+    $retdata = helixmedia_curl_post_launch_html(array("resource_link_id" => $preid, "user_id" => $userid), helixmedia_get_upload_url());
+
+    // We got a 404, the MEDIAL server doesn't support this call, so return false
+    // The old method was to check for the presence of a resource link ID so this is consistent
+    if(strpos($retdata, "HTTP 404") > 0) {
+        return false;
+    }
+
+    if ($retdata == "Y") {
+        return false;
+    }
+
+    return true;
+}
+
 
 function str_contains($haystack, $needle, $ignoreCase = false) {
     if ($ignoreCase) {
@@ -645,3 +702,56 @@ function str_contains($haystack, $needle, $ignoreCase = false) {
     return ($needlePos === false ? false : ($needlePos+1));
 }
 
+
+function helixmedia_version_check() {
+    $status_url = trim(get_config("helixmedia", "launchurl"));
+    if (strlen($status_url) == 0) {
+        return "<p>".get_string("version_check_not_done", "helixmedia")."</p>";
+    }
+    $pos = str_contains($status_url, "/Lti/Launch", true);
+    $endpoint = substr($status_url, 0, $pos)."/version.txt";
+
+    $ch = curl_init($endpoint);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 50);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_VERBOSE, 1);
+    curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (compatible; curl; like Firefox)");
+    curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+    curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); 
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+    $result=trim(curl_exec($ch));
+    if (curl_errno($ch)) {
+        error_log("CURL Error connecting to MEDIAL: ". curl_error($ch));
+        return "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+    }
+    curl_close($ch);
+
+    $v = new stdclass();
+    $v->min = MEDIAL_MIN_VERSION;
+    $v->actual = $result;
+    $message = "<p>".get_string('version_check_message', 'helixmedia', $v)."</p>";
+
+    $req_ver = explode_medial_version(MEDIAL_MIN_VERSION);
+    $actual_ver = explode_medial_version($result);
+
+    for ($loop = 0; $loop < count($req_ver); $loop++) {
+        if ($actual_ver[$loop] < $req_ver=[$loop]) {
+            $message .= "<p class='warning'>".get_string('version_check_upgrade', 'helixmedia')."</p>";
+            break;
+        }
+    }
+
+    return $message."<br />";
+}
+
+function explode_medial_version($str) {
+    $parts = explode('.', $str);
+    for ($loop = 0; $loop < count($parts); $loop++) {
+        $parts[$loop] = intval($parts[$loop]);
+    }
+    return $parts;
+}

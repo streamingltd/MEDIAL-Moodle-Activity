@@ -341,7 +341,7 @@ function helixmedia_view($hml, $course, $cm, $context) {
         'objectid' => $hml->id
     );
 
-    $event = \mod_page\event\course_module_viewed::create($params);
+    $event = \mod_helixmedia\event\course_module_viewed::create($params);
     $event->add_record_snapshot('course_modules', $cm);
     $event->add_record_snapshot('course', $course);
     $event->add_record_snapshot('helixmedia', $hml);

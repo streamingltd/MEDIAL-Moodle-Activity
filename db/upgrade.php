@@ -23,7 +23,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die;
+
+require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 
 /**
  * xmldb_helixmedia_upgrade is the function that upgrades
@@ -64,6 +66,8 @@ function xmldb_helixmedia_upgrade($oldversion) {
         unset_config("helixmedia_sendemailaddr");
         unset_config("helixmedia_custom_params");
     }
+
+    echo helixmedia_version_check();
 
     return true;
 }

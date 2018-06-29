@@ -1,7 +1,3 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html  dir="ltr" lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head><title>HML LTI Launcher</title></head>
-<body>
 <?php
 /**
  * This file contains all necessary code to view a helixmedia activity instance
@@ -18,6 +14,13 @@ require_once("../../config.php");
 require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 
+?>
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head><title>HML LTI Launcher</title></head>
+<body>
+<?php
+
 //Course module ID
 $id = optional_param('id', 0, PARAM_INT); // Course Module ID
 
@@ -27,14 +30,21 @@ $aid = optional_param('aid', 0, PARAM_INT);
 //HML preid, only used here for a Fake launch for new instances
 $l  = optional_param('l', 0, PARAM_INT);  // HML ID
 
+//Hidden option to force debug lanuch
+$debug = optional_param('debuglaunch', 0, PARAM_INT);
+
 //Course ID
 //Note using $COURSE->id here seems to give random results.
 global $USER;
-$cid=array_keys($USER->currentcourseaccess);
-if(array_key_exists(0, $cid))
-    $cid=$cid[0];
-   else
-    $cid=1;
+if (property_exists($USER, 'currentcourseaccess')) {
+    $cid=array_keys($USER->currentcourseaccess);
+    if(array_key_exists(0, $cid))
+        $cid=$cid[0];
+    else
+        $cid=1;
+} else {
+    $cid=$COURSE->id;
+}
 $c  = optional_param('course', $cid, PARAM_INT);
 
 //New assignment submission ID
@@ -101,33 +111,69 @@ if ($l || $n_assign || $n_feed || $type==HML_LAUNCH_TINYMCE_EDIT || $type==HML_L
 
     if ($type==HML_LAUNCH_TINYMCE_VIEW || $type==HML_LAUNCH_ATTO_VIEW)
     {
+        if (strpos($_SERVER ['HTTP_USER_AGENT'], 'MoodleMobile') !== false) {
+            echo "<p>".get_string('moodlemobile', 'helixmedia')."</p>";
+            echo "</body></html>";
+            return;
+        }
+
         /**This handles dynamic sizing of the launch frame**/
         $size=helixmedia_get_instance_size($hmli->preid, $c);
 
-        if ($size==0)
+        if ($size->width == 0)
         {
+            $ratio = 0.605;
+            // If height is -1, use old size rules
+            if ($size->height == -1) {
+                $ratio = 0.85;
+            }
             echo "<script type=\"text/javascript\">\n".
                  "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');\n".
-                 "var h=parseInt(vid.parentElement.offsetWidth*0.85);\n".
+                 "var h=parseInt(vid.parentElement.offsetWidth*".$ratio.");\n".
                  "vid.style.width='100%';\n".
                  "vid.style.height=h+'px';\n".
                  "</script>\n";
         }
         else
         {
-            $w="530px";
-            $h="420px";
-            if ($size==640)
+            // If height is -1, use old size rules
+            if ($size->height==-1)
             {
-                $w="680px";
-                $h="570px";
+                $w="530px";
+                $h="420px";
+                if ($size->width==640)
+                {
+                    $w="680px";
+                    $h="570px";
+                }
+                else
+                if ($size->width==835)
+                {
+                    $w="880px";
+                    $h="694px";
+                }
+            } else {
+                if ($size->audioonly) {
+                    $w = $size->width."px";
+                    $h = $size->height."px";
+                } else {
+                    $w="380px";
+                    $h="340px";
+                    if ($size->width==640)
+                    {
+                        $w="680px";
+                        $h="455px";
+                    }
+                    else
+                    if ($size->width==835)
+                    {
+                        $w="875px";
+                        $h="575px";
+                    }
+                }
             }
-            else
-            if ($size==835)
-            {
-                $w="880px";
-                $h="694px";
-            }
+
+
             echo "<script type=\"text/javascript\">\n".
                  "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');".
                  "vid.style.width='".$w."';\n".
@@ -266,8 +312,11 @@ if ($cap==null || !has_capability($cap, $context)) {
     die;
 }
 
-//*****Uncomment to force debug mode*****
-//$hmli->debuglaunch=1;
+$hmli->debuglaunch=0;
+//*****Comment out the if to force debug mode in all cases*****
+if ($debug) {
+    $hmli->debuglaunch=1;
+}
 
 //Do the logging
 if ($type==HML_LAUNCH_NORMAL || $type==HML_LAUNCH_EDIT)
@@ -313,8 +362,11 @@ if ($type==HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS || $type==HML_LAUNCH_VIEW_SUBM
    $hmli->userid=$userid;
 
 if ($type==HML_LAUNCH_NORMAL && $CFG->version>=2015111600) {
-   lti_view($hmli, $course, $cm, $context);
+   helixmedia_view($hmli, $course, $cm, $context);
 }
+
+/* Add these fields to stop the lti mod launch code complaining */
+
 
 helixmedia_view_mod($hmli, $type, $mid, $ret);
 

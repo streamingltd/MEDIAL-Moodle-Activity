@@ -25,6 +25,7 @@ global $CFG, $PAGE;
 
 $id = optional_param('id', 0, PARAM_INT); // Course Module ID, or
 $l  = optional_param('l', 0, PARAM_INT);  // HML ID
+$debug = optional_param('debuglaunch', 0, PARAM_INT);
 
 if ($l) {  // Two ways to specify the module
     $hmli = $DB->get_record('helixmedia', array('id' => $l), '*', MUST_EXIST);
@@ -56,13 +57,17 @@ $launchcontainer = lti_get_launch_container($hmli, $toolconfig);
 
 $launchurl="launch.php?type=".HML_LAUNCH_NORMAL."&id=".$cm->id;
 
+if ($debug) {
+    $launchurl.="&debuglaunch=1";
+}
+
 if ($launchcontainer == LTI_LAUNCH_CONTAINER_REPLACE_MOODLE_WINDOW) {
-  redirect($launchurl);
+    redirect($launchurl);
 } else if ($launchcontainer == LTI_LAUNCH_CONTAINER_EMBED_NO_BLOCKS) {
     $PAGE->set_pagelayout('frametop'); //Most frametops don't include footer, and pre-post blocks
     $PAGE->blocks->show_only_fake_blocks(); //Disable blocks for layouts which do include pre-post blocks
 } else {
-  $PAGE->set_pagelayout('incourse');
+    $PAGE->set_pagelayout('incourse');
 }
 
 require_login($course);
@@ -72,8 +77,14 @@ helixmedia_view($hmli, $course, $cm, $context);
 $pagetitle = strip_tags($course->shortname.': '.format_string($hmli->name));
 $PAGE->set_title($pagetitle);
 $PAGE->set_heading($course->fullname);
-if (has_capability('mod/helixmedia:addinstance', $context)) {
-    $PAGE->set_button(update_module_button($cm->id, $course->id, get_string("modulename", "helixmedia")));
+
+// update_module_button has been deprecated, but since we don't show the admin block on this page we still need the 
+// update button, so create it directly.
+
+if (has_capability('mod/helixmedia:addinstance', $context) && has_capability('moodle/course:manageactivities', $context)) {
+     $string = get_string('updatethis', '', get_string("modulename", "helixmedia"));
+     $url = new moodle_url("$CFG->wwwroot/course/mod.php", array('update' => $cm->id, 'return' => true, 'sesskey' => sesskey()));
+     $PAGE->set_button($OUTPUT->single_button($url, $string));
 }
 
 // Print the page header
@@ -96,10 +107,16 @@ if ( $launchcontainer == LTI_LAUNCH_CONTAINER_WINDOW ) {
     echo "<p style='text-align:center;'>".get_string("hml_in_new_window_message", "helixmedia")."</p>";
     echo "<p style='text-align:center;'><a href='".$launchurl."' target='_blank'>".get_string("hml_in_new_window", "helixmedia")."</a></p>\n";
 } else {
-    // Request the launch content with an object tag
-    echo '<object id="contentframe" height="650" width="100%" type="text/html" data="'.htmlspecialchars($launchurl).'"></object>';
+    $size = helixmedia_get_instance_size($hmli->preid, $course->id);
 
-    //Output script to make the object tag be as large as possible
+    if ($size->audioonly) {
+        echo '<iframe allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" id="contentframe" height="100" width="100%" src="'.htmlspecialchars($launchurl).'"></iframe>';
+    } else {
+
+        // Request the launch content with an iframe tag
+        echo '<iframe allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" id="contentframe" height="650" width="100%" src="'.htmlspecialchars($launchurl).'"></iframe>';
+
+        //Output script to make the iframe tag be as large as possible
 ?>
         <script type="text/javascript">
         //<![CDATA[
@@ -122,6 +139,7 @@ if ( $launchcontainer == LTI_LAUNCH_CONTAINER_WINDOW ) {
         //]]
         </script>
 <?php
+    }
 }
 // Finish the page
 echo $OUTPUT->footer();
