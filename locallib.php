@@ -735,23 +735,21 @@ function helixmedia_version_check() {
     $v->actual = $result;
     $message = "<p>".get_string('version_check_message', 'helixmedia', $v)."</p>";
 
-    $req_ver = explode_medial_version(MEDIAL_MIN_VERSION);
-    $actual_ver = explode_medial_version($result);
+    $req_ver = parse_medial_version(MEDIAL_MIN_VERSION);
+    $actual_ver = parse_medial_version($result);
 
-    for ($loop = 0; $loop < count($req_ver); $loop++) {
-        if ($actual_ver[$loop] < $req_ver=[$loop]) {
-            $message .= "<p class='warning'>".get_string('version_check_upgrade', 'helixmedia')."</p>";
-            break;
-        }
+    if ($actual_ver < $req_ver) {
+        $message .= "<p class='warning'>".get_string('version_check_upgrade', 'helixmedia')."</p>";
     }
 
     return $message."<br />";
 }
 
-function explode_medial_version($str) {
+function parse_medial_version($str) {
     $parts = explode('.', $str);
+    $concat = '';
     for ($loop = 0; $loop < count($parts); $loop++) {
-        $parts[$loop] = intval($parts[$loop]);
+        $concat .= $parts[$loop];
     }
-    return $parts;
+    return intval($concat);
 }
