@@ -312,11 +312,13 @@ if ($cap==null || !has_capability($cap, $context)) {
     die;
 }
 
-$hmli->debuglaunch=0;
-//*****Comment out the if to force debug mode in all cases*****
-if ($debug) {
-    $hmli->debuglaunch=1;
+$hmli->debuglaunch = 0;
+$mod_config=get_config("helixmedia");
+if ( ($mod_config->forcedebug && $mod_config->restrictdebug && is_siteadmin()) ||
+     ($mod_config->restrictdebug == false && $mod_config->forcedebug)) {
+    $hmli->debuglaunch = 1;
 }
+
 
 //Do the logging
 if ($type==HML_LAUNCH_NORMAL || $type==HML_LAUNCH_EDIT)

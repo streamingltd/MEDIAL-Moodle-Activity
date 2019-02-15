@@ -16,6 +16,7 @@ global $CFG;
 ?>
 var activity_dialog;
 var gotIn=false;
+var medial_interval;
 
 function checkStatus()
 {
@@ -34,21 +35,25 @@ function checkStatus()
     if (xmlDoc.responseText=="IN")
         gotIn=true;
     
-    if (xmlDoc.responseText!="OUT" || gotIn==false)
-        setTimeout(checkStatus, 2000);
+    if (xmlDoc.responseText!="OUT" || gotIn==false) {
+        if (medial_interval == null) {
+            medial_interval = setInterval(checkStatus, 2000);
+        }
+    } else {
 <?php 
     $mod_config=get_config("helixmedia");
     $delay = intval($mod_config->modal_delay);
     if ($delay==0)
-        echo "else closeDialogue();\n";
+        echo "closeDialogue();\n";
     else if ($delay>0)
-        echo "else setTimeout(closeDialogue, ".($delay*1000).");\n";
+        echo "setTimeout(closeDialogue, ".($delay*1000).");\n";
 ?>
-
+    }
 }
 
 function closeDialogue()
 {
+    clearInterval(medial_interval);
     var tframe=document.getElementById("thumbframe");
     if (tframe!=null && typeof(thumburl)!="undefined")
      tframe.contentWindow.location=thumburl;
@@ -72,6 +77,22 @@ function closeDialogue()
     }
 
     activity_dialog=null;
+
+    // Sometimes the yui_act_sel_dialog_mask element get duplicated (bug in Moodle?) and only one will be
+    // unmasked when the dialog is closed. So we need to find the duplicates and then hide them as well. Using the
+    // the id doesn't work because it only finds the first duplicate so we need to search for the mask class.
+
+    var maskdivs = document.getElementsByClassName("mask");
+    for (i=0; i < maskdivs.length; i++) {
+        if (maskdivs[i].id == "yui_act_sel_dialog_mask") {
+            maskdivs[i].style.display = "none";
+        }
+    }
+
+    while (maskdivs.length>1) {
+        maskdivs[0].parentNode.removeChild(maskdivs[0]);
+        maskdivs = document.getElementsByClassName("mask");
+    }
 }
 
 
@@ -209,7 +230,7 @@ if (typeof com.uol == 'undefined') {
                     modal: true,
                     width: e.argument[0] + 'px',
                     height: e.argument[1] + 'px',
-                    iframe: true,
+                    iframe: false,
                     zIndex: 9999,
                     fixedcenter: false,
                     visible: false,

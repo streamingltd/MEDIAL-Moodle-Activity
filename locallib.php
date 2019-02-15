@@ -570,8 +570,6 @@ function helixmedia_get_modal_dialog($pre_id, $params_thumb, $params_link, $styl
     $params_thumb='course='.$course->id.'&'.$params_thumb;
     $params_link='course='.$course->id.'&ret='.base64_encode(curPageURL()).'&'.$params_link;
 
-    $PAGE->requires->js('/mod/helixmedia/hml_form_js.php');
-
     if ($statusCheck!="true") {
         $frameid="thumbframeview";
     } else {
@@ -584,10 +582,13 @@ function helixmedia_get_modal_dialog($pre_id, $params_thumb, $params_link, $styl
             $linkimage.'</a>';
     else
     {
+
+        $launch_url = get_config("helixmedia", "launchurl");
+        $allow = 'allow="microphone '.$launch_url.'; camera '.$launch_url.'"';
         if ($splitline) {
             $html='<table style="'.$style.'"><tr><td>'.
                 '<iframe id="'.$frameid.'" style="border-width:0px;width:200px;height:128px;" scrolling="no" frameborder="0" '.
-                'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.htmlspecialchars($params_thumb).'"></iframe>'.
+                'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.htmlspecialchars($params_thumb).'" '.$allow.'></iframe>'.
                 '</td></tr><tr><td style="vertical-align:top;margin-top:0px;">'.
                 '<a class="pop_up_selector_link" href="'.$CFG->wwwroot.'/mod/helixmedia/container.php?'.htmlspecialchars($params_link).'">'.
                 '<img src="'.$CFG->wwwroot.'/mod/helixmedia/icons/'.$linkimage.'" width="'.$linkimagewidth.'" height="'.$linkimageheight.'" alt="'.
@@ -596,7 +597,7 @@ function helixmedia_get_modal_dialog($pre_id, $params_thumb, $params_link, $styl
         } else {
             $html='<div style="display:flex;flex-wrap:wrap;'.$style.'"><div style="order:0;">'.
                 '<iframe id="'.$frameid.'" style="border-width:0px;width:200px;height:128px;" scrolling="no" frameborder="0" '.
-                'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.htmlspecialchars($params_thumb).'"></iframe>'.
+                'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.htmlspecialchars($params_thumb).'" '.$allow.'></iframe>'.
                 '</div><div style="order:1;">'.
                 '<a class="pop_up_selector_link" href="'.$CFG->wwwroot.'/mod/helixmedia/container.php?'.htmlspecialchars($params_link).'">'.
                 '<img src="'.$CFG->wwwroot.'/mod/helixmedia/icons/'.$linkimage.'" alt="'.
@@ -614,7 +615,8 @@ function helixmedia_get_modal_dialog($pre_id, $params_thumb, $params_link, $styl
         'var statusURL="'.helixmedia_get_status_url().'";'.
         'var oauthConsumerKey = "'.$mod_config->consumer_key.'";'.
         'var doStatusCheck='.$statusCheck.';'.
-        '</script>';
+        '</script>'.
+        '<script type="text/javascript" src="'.$CFG->wwwroot.'/mod/helixmedia/hml_form_js.php"></script>';
 
     return $html;
 }

@@ -69,8 +69,11 @@ if (strlen($intro)>0)
 $h=$h-32;
 $w=$w-14;
 
+$launch_url = get_config("helixmedia", "launchurl");
+$allow = 'allow="microphone '.$launch_url.'; camera '.$launch_url.'"';
+
 echo '<iframe style="margin-left:7px;margin-top:25px;border:0px;background:#ffffff;" width="'.$w.'" height="'.$h.'" '.
-   'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?course='.$c.'&amp;'.$param.'"></iframe>';
+   'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?course='.$c.'&amp;'.$param.'" '.$allow.'></iframe>';
 
 ?>
 </body>

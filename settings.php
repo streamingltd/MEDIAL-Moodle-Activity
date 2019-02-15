@@ -57,6 +57,10 @@ $settings->add(new admin_setting_configtextarea('helixmedia/custom_params', get_
 $settings->add(new admin_setting_configtext('helixmedia/modal_delay', get_string("modal_delay", "helixmedia"),
                    get_string("modal_delay2", "helixmedia"), 0, PARAM_INT));
 
+$settings->add(new admin_setting_configcheckbox('helixmedia/forcedebug', get_string('forcedebug', 'helixmedia'), get_string('forcedebug_help', 'helixmedia'), 0));
+
+$settings->add(new admin_setting_configcheckbox('helixmedia/restrictdebug', get_string('restrictdebug', 'helixmedia'), get_string('restrictdebug_help', 'helixmedia'), 1));
+
 if ($PAGE->url->get_param("section")=="modsettinghelixmedia") {
 
     $settings->add(new admin_setting_heading('helixmedia/repo_migrate', get_string("repo_migrate_title", "mod_helixmedia"),
