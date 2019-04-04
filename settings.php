@@ -8,12 +8,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-global $CFG;
 require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
 
-
-if ($PAGE->url->get_param("section")=="modsettinghelixmedia") {
+if (strpos(qualified_me(), 'modsettinghelixmedia') !== false) {
     require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
     $settings->add(new admin_setting_heading('helixmedia/version_check', get_string("version_check_title", "mod_helixmedia"),
         helixmedia_version_check()));
@@ -61,7 +59,7 @@ $settings->add(new admin_setting_configcheckbox('helixmedia/forcedebug', get_str
 
 $settings->add(new admin_setting_configcheckbox('helixmedia/restrictdebug', get_string('restrictdebug', 'helixmedia'), get_string('restrictdebug_help', 'helixmedia'), 1));
 
-if ($PAGE->url->get_param("section")=="modsettinghelixmedia") {
+if (strpos(qualified_me(), 'modsettinghelixmedia') !== false) {
 
     $settings->add(new admin_setting_heading('helixmedia/repo_migrate', get_string("repo_migrate_title", "mod_helixmedia"),
         "<p>".get_string("repo_migrate_message", "mod_helixmedia")."</p>".
