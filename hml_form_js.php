@@ -63,6 +63,11 @@ function closeDialogue()
     }, 500);
 
     var mform1=document.getElementById("mform1");
+    if (mform1==null) {
+        var elements = document.getElementsByClassName("mform");
+        mform1 = elements[0];
+    }
+
     if (mform1!=null)
     {
         if (typeof mform1.elements['helixassign_activated']!="undefined")

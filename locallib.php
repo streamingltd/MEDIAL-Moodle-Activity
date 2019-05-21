@@ -130,6 +130,7 @@ function helixmedia_view_mod($instance, $type=HML_LAUNCH_NORMAL, $ref=-1, $ret="
             $typeconfig['customparameters'].="\nlink_response=Y\nlink_type=Assignment";
             $typeconfig['customparameters'].="\nassignment_ref=".$instance->cmid;
             $typeconfig['customparameters'].="\ntemp_assignment_ref=".helixmedia_get_assign_into_refs($instance->cmid)."\n";
+            $typeconfig['customparameters'].="\ngroup_assignment=".helixmedia_is_group_assign($instance->cmid);
             break;
         case HML_LAUNCH_STUDENT_SUBMIT_PREVIEW:
             $typeconfig['customparameters'].="\nlink_type=Assignment";
@@ -137,6 +138,7 @@ function helixmedia_view_mod($instance, $type=HML_LAUNCH_NORMAL, $ref=-1, $ret="
             /**Note play_only is redundant in HML 3.1.007 onwards and will be ignored**/
             $typeconfig['customparameters'].="\nplay_only=Y\nno_horiz_borders=Y";
             $typeconfig['customparameters'].="\ntemp_assignment_ref=".helixmedia_get_assign_into_refs($instance->cmid)."\n";
+            $typeconfig['customparameters'].="\ngroup_assignment=".helixmedia_is_group_assign($instance->cmid);
             break;
         case HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS:
         case HML_LAUNCH_VIEW_SUBMISSIONS:
@@ -245,6 +247,18 @@ function helixmedia_view_mod($instance, $type=HML_LAUNCH_NORMAL, $ref=-1, $ret="
         return helixmedia_curl_post_launch_html($params, $endpoint);
     else
         echo lti_post_launch_html($params, $endpoint, $debuglaunch);
+}
+
+function helixmedia_is_group_assign($cmid) {
+    global $DB;
+    $cm = $DB->get_record('course_modules', array('id' => $cmid));
+    $assign = $DB->get_record('assign', array('id' => $cm->instance));
+
+    if ($assign->teamsubmission) {
+         return "Y";
+    } else {
+         return "N";
+    }
 }
 
 function helixmedia_get_assign_into_refs($assign_id) {
