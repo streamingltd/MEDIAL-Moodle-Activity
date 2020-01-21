@@ -261,50 +261,6 @@ function helixmedia_print_recent_activity($course, $isteacher, $timestart) {
 }
 
 /**
- * Function to be run periodically according to the moodle cron
- * This function searches for things that need to be done, such
- * as sending out mail, toggling flags etc ...
- *
- * @uses $CFG
- * @return boolean
- **/
-function helixmedia_cron () {
-    global $CFG, $DB;
-    $pre_recs=$DB->get_records('helixmedia_pre');
-
-    /**If there is only one entry in the table, leave it alone regardless. This is needed to stop InnoDB from
-    incorrectly recalculating the AUTO_INCREMENT value if the DB is restarted with an empty table.**/
-    if (count($pre_recs)<2)
-     return;
-
-    //Remove the last element so that the most recent preid value always explicitly remains in the database for the benefit of InnoDB
-    array_pop($pre_recs);
-
-    $assign_installed=$DB->get_records('assign_plugin_config', array('plugin' => 'helixassign'));
-    if (count($assign_installed)>0)
-        $assign_installed=true;
-
-    $feed_installed=$DB->get_records('assign_plugin_config', array('plugin' => 'helixfeedback'));
-    if (count($feed_installed)>0)
-        $assign_installed=true;
-
-    foreach ($pre_recs as $pre_rec) {
-        $hm=$DB->get_record('helixmedia', array('preid'=> $pre_rec->id));
-        if (!$hm && $assign_installed)
-            $hm=$DB->get_record('assignsubmission_helixassign', array('preid'=> $pre_rec->id));
-        if (!$hm && $feed_installed)
-            $hm=$DB->get_record('assignfeedback_helixfeedback', array('preid'=> $pre_rec->id));
-
-        /**Clean out anything with an ID that is now in the main table or older than the session time out**/
-        if ($hm || $pre_rec->timecreated+$CFG->sessiontimeout < time())
-            $DB->delete_records('helixmedia_pre', array('id'=>$pre_rec->id));
-
-    }
-
-    return true;
-}
-
-/**
  * Execute post-install custom actions for the module
  * This function was added in 1.9
  *
