@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -26,15 +25,12 @@
  */
 
 namespace mod_helixmedia\task;
- 
+
 /**
  * Cleanup task for HelixMedia;
  */
-
-
-
 class cleanup extends \core\task\scheduled_task {
- 
+
     /**
      * Return the task's name as shown in admin screens.
      *
@@ -43,47 +39,50 @@ class cleanup extends \core\task\scheduled_task {
     public function get_name() {
         return get_string('cleanup', 'mod_helixmedia');
     }
- 
+
     /**
      * Execute the task.
      */
     public function execute() {
         global $CFG, $DB;
-        $pre_recs=$DB->get_records('helixmedia_pre');
+        $prerecs = $DB->get_records('helixmedia_pre');
 
-        /**If there is only one entry in the table, leave it alone regardless. This is needed to stop InnoDB from
-        incorrectly recalculating the AUTO_INCREMENT value if the DB is restarted with an empty table.**/
-        if (count($pre_recs)<2)
+        // If there is only one entry in the table, leave it alone regardless. This is needed to stop InnoDB from
+        // incorrectly recalculating the AUTO_INCREMENT value if the DB is restarted with an empty table.
+        if (count($prerecs) < 2) {
              return;
-
-        //Remove the last element so that the most recent preid value always explicitly remains in the database for the benefit of InnoDB
-        array_pop($pre_recs);
+        }
+        // Remove the last element so that the most recent preid value always explicitly remains in the database
+        // for the benefit of InnoDB.
+        array_pop($prerecs);
 
         $subplugins = \core_plugin_manager::instance()->get_installed_plugins('assignsubmission');
         if (array_key_exists('helixassign', $subplugins)) {
-            $assign_installed=true;
+            $assigninstalled = true;
         } else {
-            $assign_installed=false;
+            $assigninstalled = false;
         }
 
         $feedplugins = \core_plugin_manager::instance()->get_installed_plugins('assignfeedback');
         if (array_key_exists('helixfeedback', $feedplugins)) {
-            $feed_installed=true;
+            $feedinstalled = true;
         } else {
-            $feed_installed=false;
+            $feedinstalled = false;
         }
 
-        foreach ($pre_recs as $pre_rec) {
-            $hm=$DB->get_record('helixmedia', array('preid'=> $pre_rec->id));
-            if (!$hm && $assign_installed)
-                $hm=$DB->get_record('assignsubmission_helixassign', array('preid'=> $pre_rec->id));
-            if (!$hm && $feed_installed)
-                $hm=$DB->get_record('assignfeedback_helixfeedback', array('preid'=> $pre_rec->id));
+        foreach ($prerecs as $prerec) {
+            $hm = $DB->get_record('helixmedia', array('preid' => $prerec->id));
+            if (!$hm && $assigninstalled) {
+                $hm = $DB->get_record('assignsubmission_helixassign', array('preid' => $prerec->id));
+            }
+            if (!$hm && $feedinstalled) {
+                $hm = $DB->get_record('assignfeedback_helixfeedback', array('preid' => $prerec->id));
+            }
 
-            /**Clean out anything with an ID that is now in the main table or older than the session time out**/
-            if ($hm || $pre_rec->timecreated+$CFG->sessiontimeout < time())
-                $DB->delete_records('helixmedia_pre', array('id'=>$pre_rec->id));
-
+            // Clean out anything with an ID that is now in the main table or older than the session time out.
+            if ($hm || $prerec->timecreated + $CFG->sessiontimeout < time()) {
+                $DB->delete_records('helixmedia_pre', array('id' => $prerec->id));
+            }
         }
     }
 }

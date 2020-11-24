@@ -1,0 +1,13 @@
+<div style='margin-left:0px;margin-right:0px;' id='helixcontainer'>
+    {{#showdescription}}
+    <core-course-module-description description="{{helixmedia.intro}}" component="mod_helixmedia" componentId="{{cmid}}"></core-course-module-description>
+    {{/showdescription}}
+    <iframe allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" id="contentframe" height="{{height}}" width="100%" src="{{launchurl}}" style='margin-left:0px;margin-right:0px'></iframe>
+
+    {{#jsresize}}{{#js}}
+        require(['jquery'], function($) {
+            var frame = document.getElementById("contentframe");
+            frame.style.height = window.innerHeight - 100;
+        });
+    {{/js}}{{/jsresize}}
+</div>

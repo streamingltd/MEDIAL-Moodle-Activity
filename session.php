@@ -14,19 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * This file defines the version of helixmedia
- *
- * @package    mod
- * @subpackage helixmedia
- * @copyright  2013 Tim Williams (For Streaming LTD)
- * @author     Tim Williams
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+require_once('../../config.php');
+require_login();
 
-defined('MOODLE_INTERNAL') || die;
-
-$plugin->version   = 2020111701; // The current module version (Date: YYYYMMDDXX).
-$plugin->requires  = 2018051700; // Requires this Moodle version.
-$plugin->component = 'mod_helixmedia'; // Full name of the plugin (used for diagnostics).
-$plugin->maturity = MATURITY_STABLE;
+?>
+OK

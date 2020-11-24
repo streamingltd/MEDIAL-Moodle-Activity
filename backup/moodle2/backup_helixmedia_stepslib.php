@@ -1,4 +1,18 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * This file contains all the backup steps that will be used
@@ -19,10 +33,10 @@ class backup_helixmedia_activity_structure_step extends backup_activity_structur
 
     protected function define_structure() {
 
-        // To know if we are including userinfo
+        // To know if we are including userinfo.
         $userinfo = $this->get_setting_value('userinfo');
 
-        // Define each element separated
+        // Define each element separated.
         $hmli = new backup_nested_element('helixmedia', array('id'), array(
             'preid',
             'course',
@@ -40,16 +54,15 @@ class backup_helixmedia_activity_structure_step extends backup_activity_structur
             )
         );
 
-        // Build the tree
-        // (none)
+        // Build the tree.
 
-        // Define sources
+        // Define sources.
         $hmli->set_source_table('helixmedia', array('id' => backup::VAR_ACTIVITYID));
 
-        // Define file annotations
-        $hmli->annotate_files('mod_helixmedia', 'intro', null); // This file areas haven't itemid
+        // Define file annotations.
+        $hmli->annotate_files('mod_helixmedia', 'intro', null); // This file areas haven't itemid.
 
-        // Return the root element (hmli), wrapped into standard activity structure
+        // Return the root element (hmli), wrapped into standard activity structure.
         return $this->prepare_activity_structure($hmli);
     }
 }

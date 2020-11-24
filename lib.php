@@ -1,5 +1,18 @@
 <?php
-
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * This file contains a library of functions and constants for the helixmedia module
@@ -26,63 +39,75 @@ defined('MOODLE_INTERNAL') || die;
  */
 function helixmedia_supports($feature) {
     switch($feature) {
-        case FEATURE_GROUPS:                  return false;
-        case FEATURE_GROUPINGS:               return false;
-        case FEATURE_GROUPMEMBERSONLY:        return true;
-        case FEATURE_MOD_INTRO:               return true;
-        case FEATURE_COMPLETION_TRACKS_VIEWS: return true;
-        case FEATURE_BACKUP_MOODLE2:          return true;
-
-        default: return null;
+        case FEATURE_GROUPS:
+            return false;
+        case FEATURE_GROUPINGS:
+            return false;
+        case FEATURE_GROUPMEMBERSONLY:
+            return true;
+        case FEATURE_MOD_INTRO:
+            return true;
+        case FEATURE_COMPLETION_TRACKS_VIEWS:
+            return true;
+        case FEATURE_BACKUP_MOODLE2:
+            return true;
+        default:
+            return null;
     }
 }
 
+/**
+ * Allocate a resource link ID
+ */
 function helixmedia_preallocate_id() {
     global $DB, $CFG;
     require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
-   
-    $pre=new stdclass();
+
+    $pre = new stdclass();
     $pre->timecreated = time();
     $pre->servicesalt = uniqid('', true);
 
     $pre->id = $DB->insert_record('helixmedia_pre', $pre);
 
-    /***If the value here is 1 then either this is a new install or the auto_increment value has been reset
-    due to the problem with InnoDB not storing this value persistently. Check regardless.***/
-    if ($pre->id == 1){
-        $val=1;
-        //Check the activity mod
-        $sql="SELECT MAX(preid) AS preid FROM ".$CFG->prefix."helixmedia;";
-        $vala=$DB->get_record_sql($sql);
-        if ($vala)
-            $val=$vala->preid;
-        //Check the Submissions
-        $assign_installed=$DB->get_records('assign_plugin_config', array('plugin' => 'helixassign'));
-        if (count($assign_installed)>0) {
-            $sql="SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignsubmission_helixassign;";
-            $valb=$DB->get_record_sql($sql);
-            if ($valb && $valb->preid>$val)
-                $val=$valb->preid;
+    // If the value here is 1 then either this is a new install or the auto_increment value has been reset
+    // due to the problem with InnoDB not storing this value persistently. Check regardless.
+    if ($pre->id == 1) {
+        $val = 1;
+        // Check the activity mod.
+        $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."helixmedia;";
+        $vala = $DB->get_record_sql($sql);
+        if ($vala) {
+            $val = $vala->preid;
         }
-        //Check the Feedback
-        $feed_installed=$DB->get_records('assign_plugin_config', array('plugin' => 'helixfeedback'));
-        if (count($feed_installed)>0) {
-            $sql="SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignfeedback_helixfeedback;";
-            $valc=$DB->get_record_sql($sql)->preid;
-            if ($valc && $valc->preid>$val)
-                $val=$valc->preid;
+        // Check the Submissions.
+        $assigninstalled = $DB->get_records('assign_plugin_config', array('plugin' => 'helixassign'));
+        if (count($assigninstalled) > 0) {
+            $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignsubmission_helixassign;";
+            $valb = $DB->get_record_sql($sql);
+            if ($valb && $valb->preid > $val) {
+                $val = $valb->preid;
+            }
+        }
+        // Check the Feedback.
+        $feedinstalled = $DB->get_records('assign_plugin_config', array('plugin' => 'helixfeedback'));
+        if (count($feedinstalled) > 0) {
+            $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignfeedback_helixfeedback;";
+            $valc = $DB->get_record_sql($sql)->preid;
+            if ($valc && $valc->preid > $val) {
+                $val = $valc->preid;
+            }
         }
 
-        /**Checking all the instances created by the HTML editor would be a massive slow query, so 
-        i'm going to assume that all the modules get used with a reasonable degree of frequency and just add 100
-        +10% of the highest value found to offest things. This is likely to be a very rare problem, since mitgating steps
-        are being taken else where to prevent this problem, so this exists simply to fix installations that have already
-        gone wrong.**/
+        // Checking all the instances created by the HTML editor would be a massive slow query, so
+        // i'm going to assume that all the modules get used with a reasonable degree of frequency and just add 100
+        // +10% of the highest value found to offest things. This is likely to be a very rare problem, since mitgating steps
+        // are being taken else where to prevent this problem, so this exists simply to fix installations that have already
+        // gone wrong.
 
-        $val=intval($val/10)+100;
+        $val = intval($val / 10) + 100;
 
         $DB->execute("ALTER TABLE ".$CFG->prefix."helixmedia_pre AUTO_INCREMENT=".$val."");
-        $pre=new stdclass();
+        $pre = new stdclass();
         $pre->timecreated = time();
         $pre->servicesalt = uniqid('', true);
         $pre->id = $DB->insert_record('helixmedia_pre', $pre);
@@ -91,6 +116,11 @@ function helixmedia_preallocate_id() {
     return $pre->id;
 }
 
+/**
+ * Get the resource link id
+ * @param $cmid Course module id
+ * @return The Resource link id
+ */
 function helixmedia_get_preid($cmid) {
     global $DB;
     $cm = get_coursemodule_from_id('helixmedia', $cmid, 0, false, MUST_EXIST);
@@ -111,11 +141,11 @@ function helixmedia_add_instance($helixmedia, $mform) {
     global $DB, $CFG;
     require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 
-    $pre_rec=$DB->get_record('helixmedia_pre', array('id'=>$helixmedia->preid));
+    $prerec = $DB->get_record('helixmedia_pre', array('id' => $helixmedia->preid));
 
     $helixmedia->timecreated = time();
     $helixmedia->timemodified = $helixmedia->timecreated;
-    $helixmedia->servicesalt = $pre_rec->servicesalt;
+    $helixmedia->servicesalt = $prerec->servicesalt;
 
     if (!isset($helixmedia->showtitlelaunch)) {
         $helixmedia->showtitlelaunch = 0;
@@ -126,8 +156,8 @@ function helixmedia_add_instance($helixmedia, $mform) {
     }
 
     /**Set these to some defaults for now.**/
-    $helixmedia->icon="";
-    $helixmedia->secureicon="";
+    $helixmedia->icon = "";
+    $helixmedia->secureicon = "";
 
     $helixmedia->id = $DB->insert_record('helixmedia', $helixmedia);
 
@@ -181,48 +211,6 @@ function helixmedia_delete_instance($id) {
 }
 
 /**
- * Given a coursemodule object, this function returns the extra
- * information needed to print this activity in various places.
- * For this module we just need to support external urls as
- * activity icons
- *
- * @param cm_info $coursemodule
- * @return cached_cm_info info
- */
-
-/*** This might let us do a custom icon***
-
-function helixmedia_get_coursemodule_info($coursemodule) {
-    global $DB, $CFG;
-    require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
-
-    if (!$helixmedia = $DB->get_record('helixmedia', array('id' => $coursemodule->instance),
-            'icon, secureicon, intro, introformat, name')) {
-        return null;
-    }
-
-    $info = new cached_cm_info();
-
-    // We want to use the right icon based on whether the
-    // current page is being requested over http or https.
-    if (helixmedia_request_is_using_ssl() && !empty($helixmedia->secureicon)) {
-        $info->iconurl = new moodle_url($helixmedia->secureicon);
-    } else if (!empty($helixmedia->icon)) {
-        $info->iconurl = new moodle_url($helixmedia->icon);
-    }
-
-    if ($coursemodule->showdescription) {
-        // Convert intro to html. Do not filter cached version, filters run at display time.
-        $info->content = format_module_intro('helixmedia', $helixmedia, $coursemodule->id, false);
-    }
-
-    $info->name = $helixmedia->name;
-
-    return $info;
-}
-*/
-
-/**
  * Return a small object with summary information about what a
  * user has done with a given particular instance of this module
  * Used for user activity reports.
@@ -257,7 +245,7 @@ function helixmedia_user_complete($course, $user, $mod, $helixmedia) {
  * @TODO: implement this moodle function
  **/
 function helixmedia_print_recent_activity($course, $isteacher, $timestart) {
-    return false;  //  True if anything was printed, otherwise false
+    return false;  // True if anything was printed, otherwise false.
 }
 
 /**
@@ -290,11 +278,17 @@ function helixmedia_uninstall() {
  * @since Moodle 3.0
  */
 
-function helixmedia_view($hml, $course, $cm, $context) {
+function helixmedia_view($hml, $course, $cm, $context, $user = null) {
+    global $USER;
+    if ($user == null) {
+        $user = $USER;
+    }
+
     // Trigger course_module_viewed event.
     $params = array(
         'context' => $context,
-        'objectid' => $hml->id
+        'objectid' => $hml->id,
+        'userid' => $user->id
     );
 
     $event = \mod_helixmedia\event\course_module_viewed::create($params);

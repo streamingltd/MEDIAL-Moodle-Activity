@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains a library of functions and constants for the helixmedia module
+ * This file contains helixmedia external webservices
  *
  * @package    mod
  * @subpackage helixmedia
@@ -25,23 +25,13 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$tasks = [
-    [
-        'classname' => 'mod_helixmedia\task\cleanup',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '3',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-    ],
-    [
-        'classname' => 'mod_helixmedia\task\mobiletokens',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '*',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
+$functions = [
+    'mod_helixmedia_get_launch_data' => [
+        'classname'     => 'mod_helixmedia_external',
+        'methodname'    => 'get_launch_data',
+        'description'   => 'Returns launch data for the plugin',
+        'type'          => 'read',
+        'capabilities'  => 'mod/helixmedia:view',
+        'services'      => [MOODLE_OFFICIAL_MOBILE_SERVICE, 'local_mobile'],
     ],
 ];

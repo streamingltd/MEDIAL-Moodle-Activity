@@ -77,7 +77,8 @@ class lti_launch extends \core\event\base {
      * @return \moodle_url
      */
     public function get_url() {
-        return new \moodle_url("/mod/$this->objecttable/launch.php", array('id' => $this->contextinstanceid, 'type' => HML_LAUNCH_NORMAL));
+        return new \moodle_url("/mod/$this->objecttable/launch.php",
+            array('id' => $this->contextinstanceid, 'type' => HML_LAUNCH_NORMAL));
     }
 
     /**
@@ -86,8 +87,8 @@ class lti_launch extends \core\event\base {
      * @return array|null
      */
     protected function get_legacy_logdata() {
-        return array($this->courseid, $this->objecttable, 'launch', 'launch.php?id=' . $this->contextinstanceid .'&type=' . HML_LAUNCH_NORMAL, $this->objectid,
-                     $this->contextinstanceid);
+        return array($this->courseid, $this->objecttable, 'launch', 'launch.php?id=' . $this->contextinstanceid .'&type=' .
+            HML_LAUNCH_NORMAL, $this->objectid, $this->contextinstanceid);
     }
 
     /**

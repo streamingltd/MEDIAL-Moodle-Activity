@@ -27,11 +27,12 @@ namespace mod_helixmedia\search;
 defined('MOODLE_INTERNAL') || die();
 
 if (class_exists('\core_search\base_activity')) {
-    class activity_wrapper extends \core_search\base_activity {}
+    class activity_wrapper extends \core_search\base_activity {
+    }
 } else {
-    class activity_wrapper extends \core_search\area\base_activity {}
+    class activity_wrapper extends \core_search\area\base_activity {
+    }
 }
-
 
 /**
  * Search area for mod_page activities.
@@ -41,7 +42,6 @@ if (class_exists('\core_search\base_activity')) {
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class activity extends activity_wrapper {
-
 
     /**
      * Returns the document associated with this activity.
@@ -72,7 +72,7 @@ class activity extends activity_wrapper {
         // Prepare associative array with data from DB.
         $doc = \core_search\document_factory::instance($record->id, $this->componentname, $this->areaname);
         $doc->set('title', content_to_text($record->name, false));
-        $doc->set('content', ""); //content_to_text($record->content, $record->contentformat));
+        $doc->set('content', "");
         $doc->set('contextid', $context->id);
         $doc->set('courseid', $record->course);
         $doc->set('owneruserid', \core_search\manager::NO_OWNER_ID);

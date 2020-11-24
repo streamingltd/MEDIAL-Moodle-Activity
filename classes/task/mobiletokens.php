@@ -15,33 +15,40 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains a library of functions and constants for the helixmedia module
+ * This file defines the version of helixmedia
  *
  * @package    mod
  * @subpackage helixmedia
- * @author     Tim Williams (For Streaming LTD)
+ * @copyright  2013 Tim Williams (For Streaming LTD)
+ * @author     Tim Williams
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+namespace mod_helixmedia\task;
 
-$tasks = [
-    [
-        'classname' => 'mod_helixmedia\task\cleanup',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '3',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-    ],
-    [
-        'classname' => 'mod_helixmedia\task\mobiletokens',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '*',
-        'day' => '*',
-        'month' => '*',
-        'dayofweek' => '*',
-    ],
-];
+/**
+ * Cleanup task for HelixMedia;
+ */
+
+
+
+class mobiletokens extends \core\task\scheduled_task {
+
+    /**
+     * Return the task's name as shown in admin screens.
+     *
+     * @return string
+     */
+    public function get_name() {
+        return get_string('mobiletokens', 'mod_helixmedia');
+    }
+
+    /**
+     * Execute the task.
+     */
+    public function execute() {
+        global $DB;
+        $dayago = time() - (24 * 60 * 60);
+        $DB->delete_records_select("helixmedia_mobile", "timecreated < ".$dayago);
+    }
+}

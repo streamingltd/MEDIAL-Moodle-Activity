@@ -44,9 +44,9 @@ function xmldb_helixmedia_upgrade($oldversion) {
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2014081101) {
-        /** Move the plugin settings to mdl_config_plugins **/
+        // Move the plugin settings to mdl_config_plugins.
 
-        /** Insert into plugins config **/
+        // Insert into plugins config.
         set_config("launchurl", $CFG->helixmedia_launchurl, "helixmedia");
         set_config("consumer_key", $CFG->helixmedia_consumer_key, "helixmedia");
         set_config("shared_secret", $CFG->helixmedia_shared_secret, "helixmedia");
@@ -56,7 +56,7 @@ function xmldb_helixmedia_upgrade($oldversion) {
         set_config("sendemailaddr", $CFG->helixmedia_sendemailaddr, "helixmedia");
         set_config("custom_params", $CFG->helixmedia_custom_params, "helixmedia");
 
-        /** Remove the old values **/
+        // Remove the old values.
         unset_config("helixmedia_launchurl");
         unset_config("helixmedia_consumer_key");
         unset_config("helixmedia_shared_secret");
@@ -67,7 +67,35 @@ function xmldb_helixmedia_upgrade($oldversion) {
         unset_config("helixmedia_custom_params");
     }
 
-    echo helixmedia_version_check();
+    if ($oldversion < 2020021101) {
+        // Define table helixmedia_mobile to be created.
+        $table = new xmldb_table('helixmedia_mobile');
+
+        // Adding fields to table helixmedia_mobile.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('instance', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('user', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('course', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('token', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table helixmedia_mobile.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        // Conditionally launch create table for helixmedia_mobile.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Helixmedia savepoint reached.
+        upgrade_mod_savepoint(true, 2020021101, 'helixmedia');
+    }
+
+    try {
+        echo helixmedia_version_check();
+    } catch (Exception $e) {
+        echo "Error communicating with MEDIAL. Skipping version check";
+    }
 
     return true;
 }

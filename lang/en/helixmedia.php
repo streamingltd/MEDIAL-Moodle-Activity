@@ -1,4 +1,18 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * This file contains en_utf8 translation of the Media Library module
@@ -26,6 +40,7 @@ $string['helixmediatext'] = 'Activity name';
 $string['hml_in_new_window'] = 'Open MEDIAL Resource';
 $string['hml_in_new_window_message'] = "If a new window doesn't open automatically containing the resource you wish to view, please use the link below to open it.";
 $string['invalid_launch'] = 'Invalid parameters supplied for MEDIAL LTI launch request. Aborting.';
+$string['invalid_mobile_token'] = 'The MoodleMobile access token for this video has expired, please use the menu you on the top right to refresh this activity.';
 $string['launch_url'] = 'MEDIAL LTI Launch URL';
 $string['launch_url2'] = 'Put the LTI launch URL of the MEDIAL server here. This should be a URL in the format: https://upload.mymedialserver.org/Lti/Launch';
 $string['log_launch'] = 'MEDIAL LTI Launch';
@@ -37,6 +52,7 @@ $string['modal_delay2'] = 'By default the modal dialogue box used to add videos 
 $string['not_authorised'] = 'You are not authorised to perform this MEDIAL operation.';
 $string['pluginname'] = 'MEDIAL';
 $string['pluginadministration'] = 'MEDIAL';
+$string['mobiletokens'] = 'Clean up MEDIAL MoodleMobile access tokens';
 $string['modulename_help'] = 'The MEDIAL module provides a customised LTI based Moodle for the integration of MEDIAL server into Moodle';
 $string['modulename_link'] = 'mod/helixmedia/view';
 $string['modulenameplural'] = 'MEDIAL';

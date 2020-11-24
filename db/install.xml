@@ -29,11 +29,24 @@
         <INDEX NAME="preid" UNIQUE="false" FIELDS="preid" PREVIOUS="course" />
       </INDEXES>
     </TABLE>
-    <TABLE NAME="helixmedia_pre" COMMENT="This table contains Helix Media id pre-allocation" PREVIOUS="helixmedia">
+    <TABLE NAME="helixmedia_pre" COMMENT="This table contains Helix Media id pre-allocation" PREVIOUS="helixmedia" NEXT="helixmedia_mobile">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" SEQUENCE="true" NOTNULL="true" NEXT="timecreated"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="id" NEXT="servicesalt"/>
         <FIELD NAME="servicesalt" TYPE="char" LENGTH="40" NOTNULL="false" SEQUENCE="false" PREVIOUS="timecreated" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+      </KEYS>
+    </TABLE>
+        <TABLE NAME="helixmedia_mobile" COMMENT="This table contains Helix Media MoodleMobile access tokens" PREVIOUS="helixmedia_pre">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" SEQUENCE="true" NOTNULL="true" NEXT="instance"/>
+        <FIELD NAME="instance" TYPE="int" LENGTH="10" SEQUENCE="false" NOTNULL="true" PREVIOUS="id" NEXT="user"/>
+        <FIELD NAME="user" TYPE="int" LENGTH="10" SEQUENCE="false" NOTNULL="true" PREVIOUS="instance" NEXT="course"/>
+        <FIELD NAME="course" TYPE="int" LENGTH="10" SEQUENCE="false" NOTNULL="true" PREVIOUS="user" NEXT="token"/>
+        <FIELD NAME="token" TYPE="char" LENGTH="40" SEQUENCE="false" NOTNULL="true" PREVIOUS="course" NEXT="timecreated"/>   
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="token"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" />
