@@ -689,7 +689,7 @@ function curpageurl() {
 function helixmedia_get_instance_size($preid, $course) {
     global $CFG;
     $url = trim(get_config("helixmedia", "launchurl"));
-    $pos = str_contains(strtolower($url), "/launch", true);
+    $pos = helixmedia_str_contains(strtolower($url), "/launch", true);
     $url = substr($url, 0, $pos)."PlayerWidth";
     $retdata = helixmedia_curl_post_launch_html(array("context_id" => $course, "resource_link_id" => $preid,
         "include_height" => "Y"), $url);
@@ -726,7 +726,7 @@ function helixmedia_get_upload_url() {
 
 function helixmedia_get_alturl($alt) {
     $statusurl = trim(get_config("helixmedia", "launchurl"));
-    $pos = str_contains(strtolower($statusurl), "/launch", true);
+    $pos = helixmedia_str_contains(strtolower($statusurl), "/launch", true);
     return substr($statusurl, 0, $pos).$alt;
 }
 
@@ -750,7 +750,7 @@ function helixmedia_is_preid_empty($preid, $as, $userid) {
 }
 
 
-function str_contains($haystack, $needle, $ignorecase = false) {
+function helixmedia_str_contains($haystack, $needle, $ignorecase = false) {
     if ($ignorecase) {
         $haystack = strtolower($haystack);
         $needle = strtolower($needle);
@@ -765,7 +765,7 @@ function helixmedia_version_check() {
     if (strlen($statusurl) == 0) {
         return "<p>".get_string("version_check_not_done", "helixmedia")."</p>";
     }
-    $pos = str_contains(strtolower($statusurl), "/lti/launch", true);
+    $pos = helixmedia_str_contains(strtolower($statusurl), "/lti/launch", true);
     $endpoint = substr($statusurl, 0, $pos)."/version.txt";
 
     $ch = curl_init($endpoint);
