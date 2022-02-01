@@ -28,10 +28,7 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 
 ?>
-<!DOCTYPE html>
-<html  dir="ltr" lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head><title>HML LTI Launcher</title></head>
-<body>
+
 <?php
 
 // Course module ID.
@@ -94,12 +91,17 @@ $intro  = optional_param('intro', "", PARAM_TEXT);
 // What's the modtype here.
 $modtype  = optional_param('modtype', "", PARAM_TEXT);
 
+// Check for responsive embeds with ATTO or TinyMCE
+$responsive = optional_param('responsive', 0, PARAM_BOOL);
+
 if (strlen($ret) > 0) {
     $ret = base64_decode($ret);
 }
 
 $hmli = null;
 $cmid = -1;
+$postscript = false;
+
 
 if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML_LAUNCH_TINYMCE_VIEW ||
     $type == HML_LAUNCH_ATTO_EDIT || $type == HML_LAUNCH_ATTO_VIEW) {
@@ -119,9 +121,7 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
             } else {
                 if ($type == HML_LAUNCH_TINYMCE_EDIT || HML_LAUNCH_ATTO_EDIT) {
                     $hmli->preid = helixmedia_preallocate_id();
-                    echo "<script type=\"text/javascript\">\n".
-                        "window.parent.postMessage('preid_".$hmli->preid."', '*');\n".
-                        "</script>\n";
+                    $postscript = true;
                 }
             }
         }
@@ -129,69 +129,18 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
 
     if ($type == HML_LAUNCH_TINYMCE_VIEW || $type == HML_LAUNCH_ATTO_VIEW) {
         if (strpos($_SERVER ['HTTP_USER_AGENT'], 'MoodleMobile') !== false) {
-            ?>
-            <p><?php echo get_string('moodlemobile', 'helixmedia')?>...</p>
-            </body></html>
-            <?php
-            return;
+            $output = $PAGE->get_renderer('mod_helixmedia');
+            $disp = new \mod_helixmedia\output\launchmessage(get_string('moodlemobile', 'helixmedia'));
+            echo $output->render($disp);
+            die;
         }
 
-        // This handles dynamic sizing of the launch frame.
-        $size = helixmedia_get_instance_size($hmli->preid, $c);
-
-        if ($size->width == 0) {
-            $ratio = 0.605;
-            // If height is -1, use old size rules.
-            if ($size->height == -1) {
-                $ratio = 0.85;
-            }
-            echo "<script type=\"text/javascript\">\n".
-                 "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');\n".
-                 "var h=parseInt(vid.parentElement.offsetWidth*".$ratio.");\n".
-                 "vid.style.width='100%';\n".
-                 "if (h>0) {vid.style.height=h+'px';}\n".
-                 "</script>\n";
-        } else {
-            // If height is -1, use old size rules.
-            if ($size->height == -1) {
-                $w = "530px";
-                $h = "420px";
-                if ($size->width == 640) {
-                    $w = "680px";
-                    $h = "570px";
-                } else {
-                    if ($size->width == 835) {
-                        $w = "880px";
-                        $h = "694px";
-                    }
-                }
-            } else {
-                if ($size->audioonly) {
-                    $w = $size->width."px";
-                    $h = $size->height."px";
-                } else {
-                    $w = "380px";
-                    $h = "340px";
-                    if ($size->width == 640) {
-                        $w = "680px";
-                        $h = "455px";
-                    } else {
-                        if ($size->width == 835) {
-                            $w = "875px";
-                            $h = "575px";
-                        }
-                    }
-                }
-            }
-
-            echo "<script type=\"text/javascript\">\n".
-                 "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');".
-                 "vid.style.width='".$w."';\n".
-                 "vid.style.height='".$h."';\n".
-                 "</script>\n";
+        if ($responsive == 0) {
+            helixmedia_legacy_dynamic_size($hmli, $c);
         }
     }
 
+    $hmli->name = '';
     $hmli->course = $c;
     $hmli->intro = "";
     $hmli->introformat = 1;
@@ -206,18 +155,27 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
     if ($aid) {
         $cm = get_coursemodule_from_id('assign', $aid, 0, false, MUST_EXIST);
         $assign = $DB->get_record('assign', array('id' => $cm->instance), '*', MUST_EXIST);
-        $hmli->name = $assign->name;
-        $hmli->intro = $assign->intro;
+        if ($nassign) {
+            $hmli->name = get_string('assignsubltititle', 'helixmedia', $assign->name);
+            $hmli->intro = fullname($USER);
+        } else {
+            $fuser = $DB->get_record('user', array('id' => $userid)); 
+            $hmli->intro = $assign->name;
+            $hmli->name = get_string('assignfeedltititle', 'helixmedia', fullname($fuser));
+        }
         $hmli->cmid = $aid;
     } else {
         if (strlen($name) > 0) {
             $hmli->name = $name;
         } else {
-            $hmli->name = "Untitled (Launch Type=".$type.")";
+            $a = new \stdclass();
+            $a->name = fullname($USER);
+            $a->date = userdate(time(), get_string('strftimedatetimeshort'));
+            $hmli->intro = fullname($USER);
         }
-        if (strlen($intro) > 0) {
-            $hmli->intro = $intro;
-        }
+        //if (strlen($intro) > 0) {
+        //    $hmli->intro = $intro;
+        //}
         $hmli->cmid = -1;
     }
     $course = $DB->get_record('course', array('id' => $c), '*', MUST_EXIST);
@@ -244,6 +202,8 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
             $hmli->cmid = $cm->id;
             $hmli->preid = $hmlassign->preid;
             $hmli->servicesalt = $hmlassign->servicesalt;
+            $hmli->name = get_string('assignsubltititle', 'helixmedia', $hmli->name);
+            $hmli->intro = fullname($USER);
             $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
         } else {
             if ($efeed) {
@@ -254,11 +214,15 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
                 $hmli->cmid = $cm->id;
                 $hmli->preid = $hmlfeed->preid;
                 $hmli->servicesalt = $hmlfeed->servicesalt;
+                $fuser = $DB->get_record('user', array('id' => $userid)); 
+                $hmli->intro = $hmli->name;
+                $hmli->name = get_string('assignfeedltititle', 'helixmedia', fullname($fuser));
                 $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST);
             } else {
-                echo "<p class='error'>".get_string('invalid_launch', 'helixmedia')."</p>";
-                echo "</body></html>";
-                die;
+                $output = $PAGE->get_renderer('mod_helixmedia');
+                $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_launch', 'helixmedia'), 'error');
+                echo $output->render($disp);
+                exit(0);
             }
         }
     }
@@ -281,7 +245,9 @@ if ($mobiletokenid) {
         $tokenrecord->token != $mobiletoken ||
         $tokenrecord->instance != $cm->id ||
         $tokenrecord->timecreated + 120 < time()) {
-            echo "<p>".get_string('invalid_mobile_token', 'helixmedia')."</p>";
+            $output = $PAGE->get_renderer('mod_helixmedia');
+            $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_mobile_token', 'helixmedia'));
+            echo $output->render($disp);
             exit(0);
     }
     $user = $DB->get_record('user', array('id' => $tokenrecord->user));
@@ -293,8 +259,6 @@ if ($mobiletokenid) {
 // Do some permissions stuff.
 $cap = null;
 switch ($type) {
-    case HML_LAUNCH_RELINK:
-        break;
     case HML_LAUNCH_NORMAL:
     case HML_LAUNCH_THUMBNAILS:
     case HML_LAUNCH_TINYMCE_VIEW:
@@ -323,9 +287,10 @@ switch ($type) {
         break;
 }
 
-if ($cap == null || !has_capability($cap, $context)) {
-    echo "<p>".get_string('not_authorised', 'helixmedia')." ".$cap." ".$modtype."</p>";
-    echo "</body></html>";
+if ($cap == null || !has_capability($cap, $context, $user)) {
+    $output = $PAGE->get_renderer('mod_helixmedia');
+    $disp = new \mod_helixmedia\output\launchmessage(get_string('not_authorised', 'helixmedia'));
+    echo $output->render($disp);
     die;
 }
 
@@ -378,19 +343,17 @@ if ($type == HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS || $type == HML_LAUNCH_VIEW_
     $hmli->userid = $userid;
 }
 
-if ($type == HML_LAUNCH_NORMAL && $CFG->version >= 2015111600) {
+if ($type == HML_LAUNCH_NORMAL) {
     helixmedia_view($hmli, $course, $cm, $context, $user);
 }
 
-helixmedia_view_mod($hmli, $type, $mid, $ret, $user, $modtype);
-
-?>
-
-<script type="text/javascript">
-function closethis()
-{
-    window.parent.postMessage('close_modal', '*');
-}
-</script>
-</body>
-</html>
+//helixmedia_view_mod($hmli, $type, $mid, $ret, $user, $modtype);
+$PAGE->set_pagelayout('embedded');
+$PAGE->set_url('/mod/helixmedia/view.php', array('id' => $hmli->id));
+$PAGE->set_title('');
+$PAGE->set_heading('');
+echo $OUTPUT->header();
+$output = $PAGE->get_renderer('mod_helixmedia');
+$disp = new \mod_helixmedia\output\launcher($hmli, $type, $mid, $ret, $user, $modtype, $postscript);
+echo $output->render($disp);
+echo $OUTPUT->footer();

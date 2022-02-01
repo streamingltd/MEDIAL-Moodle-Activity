@@ -33,7 +33,7 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 class mod_helixmedia_mod_form extends moodleform_mod {
 
     public function definition() {
-        global $add, $CFG, $update, $DB;
+        global $add, $CFG, $update, $DB, $PAGE;
         $mform =& $this->_form;
 
         if ($add) {
@@ -77,13 +77,20 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         $mform->addElement('checkbox', 'showdescriptionlaunch', '&nbsp;', ' ' . get_string('display_description', 'lti'));
         $mform->addHelpButton('showdescriptionlaunch', 'display_description', 'lti');
 
+        $output = $PAGE->get_renderer('mod_helixmedia');
+
         if ($add) {
-            $mform->addElement('static', 'choosemedia', "", helixmedia_get_modal_dialog($preid,
-                "type=".HML_LAUNCH_THUMBNAILS."&l=".$preid, "type=".HML_LAUNCH_EDIT."&l=".$preid));
+            $disp = new \mod_helixmedia\output\modal($preid,
+                array('type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid),
+                array('type' => HML_LAUNCH_EDIT, 'l' => $preid), "moodle-lti-upload-btn.png");
         } else {
-            $mform->addElement('static', 'choosemedia', "", helixmedia_get_modal_dialog($preid,
-                "type=".HML_LAUNCH_THUMBNAILS."&id=".$update, "type=".HML_LAUNCH_EDIT."&id=".$update));
+            $disp = new \mod_helixmedia\output\modal($preid,
+                array('type' => HML_LAUNCH_THUMBNAILS, 'id' => $update),
+                array('type' => HML_LAUNCH_EDIT, 'id' => $update), "moodle-lti-upload-btn.png");
         }
+
+        $mform->addElement('static', 'choosemedia', get_string('choosemedia_title', 'mod_helixmedia'), $output->render($disp));
+
         $features = array('groups' => false, 'groupings' => false, 'groupmembersonly ' => true,
                           'outcomes' => false, 'gradecat' => false, 'idnumber' => false);
         $this->standard_coursemodule_elements($features);

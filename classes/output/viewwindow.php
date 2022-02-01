@@ -14,19 +14,29 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+
+namespace mod_helixmedia\output;
+defined('MOODLE_INTERNAL') || die();
+
 /**
- * This file defines the version of helixmedia
+ * Search form renderable.
  *
- * @package    mod
- * @subpackage helixmedia
- * @copyright  2013 Tim Williams (For Streaming LTD)
- * @author     Tim Williams
+ * @package    mod_helixmedia
+ * @copyright  2021 Tim Williams <tmw@autotrain.org>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+use renderable;
+use renderer_base;
+use templatable;
 
-$plugin->version   = 2022012501; // The current module version (Date: YYYYMMDDXX).
-$plugin->requires  = 2018051700; // Requires this Moodle version.
-$plugin->component = 'mod_helixmedia'; // Full name of the plugin (used for diagnostics).
-$plugin->maturity = MATURITY_STABLE;
+/**
+ * Container renderable class.
+ *
+ * @package    mod_helixmedia
+ * @copyright  2021 Tim Williams <tmw@autotrain.org>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class viewwindow extends view implements renderable, templatable {
+
+}

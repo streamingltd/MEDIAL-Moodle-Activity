@@ -33,8 +33,8 @@ define('HML_LAUNCH_NORMAL', 1);
 define('HML_LAUNCH_THUMBNAILS', 2);
 define('HML_LAUNCH_EDIT', 3);
 
-// Special type for migration from the repository module.
-define('HML_LAUNCH_RELINK', 4);
+// Special type for migration from the repository module. Now Redundant so disabled.
+//define('HML_LAUNCH_RELINK', 4);
 
 // Assignment submission types.
 define('HML_LAUNCH_STUDENT_SUBMIT', 5);
@@ -62,178 +62,8 @@ define('HML_LAUNCH_ATTO_VIEW', 16);
 // Note next ID should be 18.
 
 // For version check.
-define('MEDIAL_MIN_VERSION', '6.0.020');
+define('MEDIAL_MIN_VERSION', '6.0.054');
 
-/**
- * Prints a Helix Media activity
- *
- * @param $instance The helixmedia instance.
- * @param $type The Helix Launch Type
- * @param $ref The value for the custom_video_ref parameter
- * @param $modtype The module type, use to check if we can use the more permissive
- * @param $ret The return URL to set for the modal dialogue
- */
-function helixmedia_view_mod($instance, $type=HML_LAUNCH_NORMAL, $ref=-1, $ret="", $user = null, $modtype = "") {
-    global $PAGE, $CFG, $DB, $USER;
-
-    if ($user == null) {
-        $user = $USER;
-    }
-
-    $modconfig = get_config("helixmedia");
-
-    if (property_exists($instance, "version")) {
-        $version = $hml->version;
-    } else {
-        $version = get_config('mod_helixmedia', 'version');
-    }
-
-    // Check to see if the DB has duplicate preid's for the assignment submission, if it does send an
-    // old version number to trigger the fix for this problem. The check doesn't need to be exhaustive.
-    // Either the whole lot will match, or none will.
-    if ($type == HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS || $type == HML_LAUNCH_VIEW_SUBMISSIONS) {
-        $ass = $DB->get_record("course_modules", array("id" => $instance->cmid));
-        $recs = $DB->get_records("assignsubmission_helixassign", array("assignment" => $ass->instance));
-        $num = -1;
-        foreach ($recs as $rec) {
-            if ($num == -1) {
-                $num = $rec->preid;
-            } else {
-                if ($num == $rec->preid) {
-                    $version = 2014111700;
-                    break;
-                }
-            }
-        }
-    }
-
-    // Set up the type config.
-    $typeconfig = (array)$instance;
-    $typeconfig['sendname'] = $modconfig->sendname;
-    $typeconfig['sendemailaddr'] = $modconfig->sendemailaddr;
-    $typeconfig['customparameters'] = $modconfig->custom_params."\nhml_version=".$version;
-
-    switch ($type) {
-        case HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS:
-        case HML_LAUNCH_THUMBNAILS:
-        case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
-        case HML_LAUNCH_FEEDBACK_THUMBNAILS:
-        case HML_LAUNCH_VIEW_FEEDBACK_THUMBNAILS:
-            $typeconfig['customparameters'] .= "\nthumbnail=Y\nthumbnail_width=176\nthumbnail_height=99";
-            break;
-    }
-
-    switch ($type) {
-        case HML_LAUNCH_NORMAL:
-        case HML_LAUNCH_TINYMCE_VIEW:
-        case HML_LAUNCH_ATTO_VIEW:
-            $typeconfig['customparameters'] .= "\nview_only=Y\nno_horiz_borders=Y";
-            break;
-        case HML_LAUNCH_EDIT:
-        case HML_LAUNCH_TINYMCE_EDIT:
-        case HML_LAUNCH_ATTO_EDIT:
-            $typeconfig['customparameters'] .= "\nno_horiz_borders=Y";
-            break;
-        case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
-            // Nothing to do here.
-            break;
-        case HML_LAUNCH_STUDENT_SUBMIT:
-            $typeconfig['customparameters'] .= "\nlink_response=Y\nlink_type=Assignment";
-            $typeconfig['customparameters'] .= "\nassignment_ref=".$instance->cmid;
-            $typeconfig['customparameters'] .= "\ntemp_assignment_ref=".helixmedia_get_assign_into_refs($instance->cmid)."\n";
-            $typeconfig['customparameters'] .= "\ngroup_assignment=".helixmedia_is_group_assign($instance->cmid);
-            break;
-        case HML_LAUNCH_STUDENT_SUBMIT_PREVIEW:
-            $typeconfig['customparameters'] .= "\nlink_type=Assignment";
-            $typeconfig['customparameters'] .= "\nassignment_ref=".$instance->cmid."\n";
-            /**Note play_only is redundant in HML 3.1.007 onwards and will be ignored**/
-            $typeconfig['customparameters'] .= "\nplay_only=Y\nno_horiz_borders=Y";
-            $typeconfig['customparameters'] .= "\ntemp_assignment_ref=".helixmedia_get_assign_into_refs($instance->cmid)."\n";
-            $typeconfig['customparameters'] .= "\ngroup_assignment=".helixmedia_is_group_assign($instance->cmid);
-            break;
-        case HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS:
-        case HML_LAUNCH_VIEW_SUBMISSIONS:
-            $typeconfig['customparameters'] .= "\nresponse_user_id=".$instance->userid;
-            break;
-        case HML_LAUNCH_VIEW_FEEDBACK:
-            $typeconfig['customparameters'] .= "\nplay_only=Y\nno_horiz_borders=Y";
-            break;
-    }
-    if ($ref > -1) {
-        $typeconfig['customparameters'] .= "\nvideo_ref=".$ref;
-    }
-
-    $typeconfig['customparameters'] .= "\nlaunch_type=".$type;
-    $typeconfig['acceptgrades'] = 0;
-    $typeconfig['allowroster'] = 1;
-    $typeconfig['forcessl'] = '0';
-    $typeconfig['launchcontainer'] = $modconfig->default_launch;
-
-    // Default the organizationid if not specified.
-    if (!empty($modconfig->org_id)) {
-        $typeconfig['organizationid'] = $modconfig->org_id;
-    } else {
-        $urlparts = parse_url($CFG->wwwroot);
-        $typeconfig['organizationid'] = $urlparts['host'];
-    }
-
-    $endpoint = trim($modconfig->launchurl);
-
-    $orgid = $typeconfig['organizationid'];
-
-    $course = $DB->get_record("course", array("id" => $instance->course));
-    $requestparams = helixmedia_build_request($instance, $typeconfig, $course, $type, $user, $modtype);
-    $launchcontainer = lti_get_launch_container($instance, $typeconfig);
-
-    if ($orgid) {
-        $requestparams["tool_consumer_instance_guid"] = $orgid;
-    }
-
-    switch ($type) {
-        case HML_LAUNCH_EDIT:
-        case HML_LAUNCH_STUDENT_SUBMIT:
-        case HML_LAUNCH_FEEDBACK:
-        case HML_LAUNCH_TINYMCE_EDIT:
-        case HML_LAUNCH_TINYMCE_VIEW:
-        case HML_LAUNCH_ATTO_EDIT:
-        case HML_LAUNCH_ATTO_VIEW:
-            break;
-        default:
-            // Mobile devices launch without the Moodle frame, so we need a return URL here.
-
-            if (method_exists("core_useragent", "check_browser_version")) {
-                $devicetype = core_useragent::get_device_type();
-            } else {
-                $devicetype = get_device_type();
-            }
-            if ($devicetype === 'mobile' || $devicetype === 'tablet' ) {
-                $returnurlparams = array('id' => $course->id);
-                $url = new moodle_url('/course/view.php', $returnurlparams);
-                $returnurl = $url->out(false);
-                $requestparams['launch_presentation_return_url'] = $returnurl;
-            }
-    }
-
-    $params = lti_sign_parameters($requestparams, $endpoint, "POST", $modconfig->consumer_key, $modconfig->shared_secret);
-
-    if (isset($instance->debuglaunch)) {
-        $debuglaunch = ( $instance->debuglaunch == 1 );
-        // Moodle 2.8 strips this out at the form submission stage, so this needs to be added after the request
-        // is signed in 2.8 since the remote server will never see this parameter.
-        if ($CFG->version >= 2014111000) {
-            $submittext = get_string('press_to_submit', 'lti');
-            $params['ext_submit'] = $submittext;
-        }
-    } else {
-        $debuglaunch = false;
-    }
-
-    if ($type == HML_LAUNCH_RELINK) {
-        return helixmedia_curl_post_launch_html($params, $endpoint);
-    } else {
-        echo lti_post_launch_html($params, $endpoint, $debuglaunch);
-    }
-}
 
 function helixmedia_is_group_assign($cmid) {
     global $DB;
@@ -456,17 +286,6 @@ function helixmedia_build_request($instance, $typeconfig, $course, $type, $user 
     // Add oauth_callback to be compliant with the 1.0A spec.
     $requestparams['oauth_callback'] = 'about:blank';
 
-    // The submit button needs to be part of the signature as it gets posted with the form.
-    // This needs to be here to support launching without javascript.
-
-    // Moodle 2.8 strips this parameter out when the launch form is submitted, so if we add it here,
-    // it will be included in the signature and the signature verification will fail on the remote server.
-    // However, Moodle 2.7 and lower always submits this, so it must be processed as part of the signature.
-    if ($CFG->version < 2014111000) {
-        $submittext = get_string('press_to_submit', 'lti');
-        $requestparams['ext_submit'] = $submittext;
-    }
-
     $requestparams['lti_version'] = 'LTI-1p0';
     $requestparams['lti_message_type'] = 'hml-launch-request';
 
@@ -520,27 +339,19 @@ function helixmedia_get_ims_role($user, $cmid, $courseid, $type, $modtype) {
         return "Learner";
     }
 
+    $coursecontext = context_course::instance($courseid);
     if (empty($cmid) || $cmid == -1) {
         // If no cmid is passed, check if the user is a teacher in the course
         // This allows other modules to programmatically "fake" a launch without
         // a real Helixmedia instance.
-        $coursecontext = context_course::instance($courseid);
 
-        $cap = helixmedia_get_visiblecap($modtype);
-
-        if (has_capability($cap, $coursecontext)) {
+        if (has_capability('moodle/course:manageactivities', $coursecontext)) {
             array_push($roles, 'Instructor');
         } else {
-            if (has_capability('moodle/course:manageactivities', $coursecontext)) {
-                array_push($roles, 'Instructor');
-            } else {
-                array_push($roles, 'Learner');
-            }
+            array_push($roles, 'Learner');
         }
     } else {
-        $context = context_module::instance($cmid);
-
-        if (has_capability('mod/helixmedia:manage', $context)) {
+        if (has_capability('mod/helixmedia:manage', $coursecontext)) {
             array_push($roles, 'Instructor');
         } else {
             array_push($roles, 'Learner');
@@ -578,99 +389,6 @@ function helixmedia_get_visiblecap($modtype = false) {
     return 'atto/helixatto:visible';
 }
 
-/**
- * Gets the modal dialog using the supplied params
- * @param pre_id The resource link ID
- * @param params_thumb The get request parameters for the thumbnail
- * @param params_link The get request parameters for the modal link
- * @param style An optional style for the containing table
- * @param linkimage Optional link image file name
- * @param linkimagewidth The width of the link image in px, -1 for none
- * @param linkimageheight The height of the link image in px, -1 for none
- * @param c The course ID, or -1 if not known
- * @param statusCheck true if the statusCheck method should be used
- * @param splitline true If the view button should be below the thumbnail
- * @return The HTML for the dialog
- **/
-function helixmedia_get_modal_dialog($preid, $paramsthumb, $paramslink, $style = "",
-    $linkimage = "", $linkimagewidth = "", $linkimageheight = "", $c = -1, $statuscheck = "true", $splitline = false) {
-    global $CFG, $PAGE, $COURSE, $DB, $USER;
-
-    if ($linkimage == "") {
-        $linkimage = "moodle-lti-upload-btn.png";
-    }
-
-    if ($linkimagewidth == "") {
-        $linkimagewidth = "202";
-    }
-
-    if ($linkimageheight == "") {
-        $linkimageheight = "56";
-    }
-
-    if (!$statuscheck) {
-        $statuscheck = "false";
-    }
-
-    if ($c > -1) {
-        $course = $DB->get_record("course", array("id" => $c));
-    } else {
-        $course = $COURSE;
-    }
-    $paramsthumb = 'course='.$course->id.'&'.$paramsthumb;
-    $paramslink = 'course='.$course->id.'&ret='.base64_encode(curpageurl()).'&'.$paramslink;
-
-    if ($statuscheck != "true") {
-        $frameid = "thumbframeview";
-    } else {
-        $frameid = "thumbframe";
-    }
-
-    if ($linkimagewidth < 0 && $linkimagewidth < 0) {
-        $html = '<a class="pop_up_selector_link" href="'.$CFG->wwwroot.'/mod/helixmedia/container.php?'.
-            htmlspecialchars($paramslink).'">'.$linkimage.'</a>';
-    } else {
-        $launchurl = get_config("helixmedia", "launchurl");
-        $allow = 'allow="microphone '.$launchurl.'; camera '.$launchurl.'"';
-        if ($splitline) {
-            $html = '<table style="'.$style.'"><tr><td>'.
-                '<iframe id="'.$frameid.'" style="border-width:0px;width:200px;height:128px;" scrolling="no" frameborder="0" '.
-                'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.htmlspecialchars($paramsthumb).'" '.$allow.'></iframe>'.
-                '</td></tr><tr><td style="vertical-align:top;margin-top:0px;">'.
-                '<a class="pop_up_selector_link" href="'.$CFG->wwwroot.'/mod/helixmedia/container.php?'.
-                htmlspecialchars($paramslink).'">'.
-                '<img src="'.$CFG->wwwroot.'/mod/helixmedia/icons/'.$linkimage.'" width="'.$linkimagewidth.'" height="'.
-                $linkimageheight.'" alt="'.
-                get_string('choosemedia_title', 'helixmedia').'" title="" /></a>'.
-                '</td></tr></table>';
-        } else {
-            $html = '<div style="display:flex;flex-wrap:wrap;'.$style.'"><div style="order:0;">'.
-                '<iframe id="'.$frameid.'" style="border-width:0px;width:200px;height:128px;" scrolling="no" frameborder="0" '.
-                'src="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.htmlspecialchars($paramsthumb).'" '.$allow.'></iframe>'.
-                '</div><div style="order:1;">'.
-                '<a class="pop_up_selector_link" href="'.$CFG->wwwroot.'/mod/helixmedia/container.php?'.
-                htmlspecialchars($paramslink).'">'.
-                '<img src="'.$CFG->wwwroot.'/mod/helixmedia/icons/'.$linkimage.'" alt="'.
-                get_string('choosemedia_title', 'helixmedia').'" title="" '.
-                'style="width:'.$linkimagewidth.';height:'.$linkimageheight.';margin-top:50px;" /></a>'.
-                '</div></div>';
-        }
-    }
-    $modconfig = get_config("helixmedia");
-
-    $html .= '<script type="text/javascript">'.
-        'var thumburl="'.$CFG->wwwroot.'/mod/helixmedia/launch.php?'.$paramsthumb.'";'.
-        'var resID='.$preid.';'.
-        'var userID='.$USER->id.';'.
-        'var statusURL="'.helixmedia_get_status_url().'";'.
-        'var oauthConsumerKey = "'.$modconfig->consumer_key.'";'.
-        'var doStatusCheck='.$statuscheck.';'.
-        '</script>'.
-        '<script type="text/javascript" src="'.$CFG->wwwroot.'/mod/helixmedia/hml_form_js.php"></script>';
-
-    return $html;
-}
-
 function curpageurl() {
     $pageurl = 'http';
     if (array_key_exists("HTTPS", $_SERVER) && $_SERVER["HTTPS"] == "on") {
@@ -688,14 +406,12 @@ function curpageurl() {
 
 function helixmedia_get_instance_size($preid, $course) {
     global $CFG;
-    $url = trim(get_config("helixmedia", "launchurl"));
-    $pos = str_contains(strtolower($url), "/launch", true);
-    $url = substr($url, 0, $pos)."PlayerWidth";
+    $url = helixmedia_get_playerwidthurl();
     $retdata = helixmedia_curl_post_launch_html(array("context_id" => $course, "resource_link_id" => $preid,
         "include_height" => "Y"), $url);
 
     $parts = explode(":", $retdata);
-    // If there is more than one part, then MEDIAL undersatnds the include_height param.
+    // If there is more than one part, then MEDIAL understands the include_height param.
     if (count($parts) > 1) {
         $vals = new stdclass();
         $vals->width = intval($parts[0]);
@@ -716,6 +432,10 @@ function helixmedia_get_instance_size($preid, $course) {
     return $vals;
 }
 
+function helixmedia_get_playerwidthurl() {
+    return helixmedia_get_alturl("PlayerWidth");
+}
+
 function helixmedia_get_status_url() {
     return helixmedia_get_alturl("SessionStatus");
 }
@@ -726,7 +446,7 @@ function helixmedia_get_upload_url() {
 
 function helixmedia_get_alturl($alt) {
     $statusurl = trim(get_config("helixmedia", "launchurl"));
-    $pos = str_contains(strtolower($statusurl), "/launch", true);
+    $pos = helixmedia_str_contains(strtolower($statusurl), "/launch", true);
     return substr($statusurl, 0, $pos).$alt;
 }
 
@@ -750,7 +470,7 @@ function helixmedia_is_preid_empty($preid, $as, $userid) {
 }
 
 
-function str_contains($haystack, $needle, $ignorecase = false) {
+function helixmedia_str_contains($haystack, $needle, $ignorecase = false) {
     if ($ignorecase) {
         $haystack = strtolower($haystack);
         $needle = strtolower($needle);
@@ -765,7 +485,7 @@ function helixmedia_version_check() {
     if (strlen($statusurl) == 0) {
         return "<p>".get_string("version_check_not_done", "helixmedia")."</p>";
     }
-    $pos = str_contains(strtolower($statusurl), "/lti/launch", true);
+    $pos = helixmedia_str_contains(strtolower($statusurl), "/lti/launch", true);
     $endpoint = substr($statusurl, 0, $pos)."/version.txt";
 
     $ch = curl_init($endpoint);
@@ -782,8 +502,8 @@ function helixmedia_version_check() {
 
     $result = trim(curl_exec($ch));
     if (curl_errno($ch)) {
-        notice("CURL Error connecting to MEDIAL: ". curl_error($ch));
-        return "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+        return "<p>CURL Error connecting to MEDIAL: ".curl_error($ch)."</p>".
+              "<p>".get_string("version_check_fail", "helixmedia")."</p>";
     }
     curl_close($ch);
 
@@ -809,4 +529,61 @@ function parse_medial_version($str) {
         $concat .= $parts[$loop];
     }
     return intval($concat);
+}
+
+function helixmedia_legacy_dynamic_size($hmli, $c) {
+    // This handles dynamic sizing of the launch frame.
+    $size = helixmedia_get_instance_size($hmli->preid, $c);
+
+    if ($size->width == 0) {
+        $ratio = 0.605;
+        // If height is -1, use old size rules.
+        if ($size->height == -1) {
+            $ratio = 0.85;
+        }
+        echo "<script type=\"text/javascript\">\n".
+             "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');\n".
+             "var h=parseInt(vid.parentElement.offsetWidth*".$ratio.");\n".
+             "vid.style.width='100%';\n".
+             "if (h>0) {vid.style.height=h+'px';}\n".
+             "</script>\n";
+    } else {
+        // If height is -1, use old size rules.
+        if ($size->height == -1) {
+            $w = "530px";
+            $h = "420px";
+            if ($size->width == 640) {
+                $w = "680px";
+                $h = "570px";
+            } else {
+                if ($size->width == 835) {
+                    $w = "880px";
+                    $h = "694px";
+                }
+            }
+        } else {
+            if ($size->audioonly) {
+                $w = $size->width."px";
+                $h = $size->height."px";
+            } else {
+                $w = "380px";
+                $h = "340px";
+                if ($size->width == 640) {
+                    $w = "680px";
+                    $h = "455px";
+                } else {
+                    if ($size->width == 835) {
+                        $w = "875px";
+                        $h = "575px";
+                    }
+                }
+            }
+        }
+
+        echo "<script type=\"text/javascript\">\n".
+             "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');".
+             "vid.style.width='".$w."';\n".
+             "vid.style.height='".$h."';\n".
+             "</script>\n";
+    }
 }

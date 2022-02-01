@@ -1,0 +1,23 @@
+<style type='text/css'>
+    .modal-backdrop {
+        z-index:-1;
+    }
+</style>
+<div id="mod_helixmedia_modal_{{preid}}{{extraid}}" class="modal fade" role="dialog" data-backdrop="false" >
+  <div class="modal-dialog" style="max-width:1000px" >
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">{{text}}</h4>
+        <button type="button" class="close text-right" data-dismiss="modal" aria-label="Close" id="mod_helixmedia_closemodal_{{preid}}{{extraid}}">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-0 pt-2" id="mod_helixmedia_modal_body">
+          <div class="embed-responsive embed-responsive-16by9">
+              <iframe id="mod_helixmedia_launchframe_{{preid}}{{extraid}}" class="embed-responsive-item overflow-auto border-0" 
+                  allow="microphone {{medialurl}}; camera {{medialurl}}"></iframe>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>

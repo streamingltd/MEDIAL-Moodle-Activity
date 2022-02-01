@@ -69,11 +69,15 @@ $PAGE->set_url($url);
 
 $launchcontainer = lti_get_launch_container($hmli, $toolconfig);
 
-$launchurl = "launch.php?type=".HML_LAUNCH_NORMAL."&id=".$cm->id;
+$lparams = array('type' => HML_LAUNCH_NORMAL, 'id' => $cm->id);
+//$launchurl = "launch.php?type=".HML_LAUNCH_NORMAL."&id=".$cm->id;
 
 if ($debug) {
-    $launchurl .= "&debuglaunch=1";
+    //$launchurl .= "&debuglaunch=1";
+    $lparams['debuglaunch'] = 1;
 }
+
+$launchurl = new moodle_url('/mod/helixmedia/launch.php', $lparams);
 
 if ($launchcontainer == LTI_LAUNCH_CONTAINER_EMBED_NO_BLOCKS) {
     $PAGE->set_pagelayout('base'); 
@@ -95,7 +99,7 @@ $PAGE->set_heading($course->fullname);
 
 if (has_capability('mod/helixmedia:addinstance', $context) && has_capability('moodle/course:manageactivities', $context)) {
      $string = get_string('updatethis', '', get_string("modulename", "helixmedia"));
-     $url = new moodle_url("$CFG->wwwroot/course/mod.php", array('update' => $cm->id, 'return' => true, 'sesskey' => sesskey()));
+     $url = new moodle_url("/course/mod.php", array('update' => $cm->id, 'return' => true, 'sesskey' => sesskey()));
      $PAGE->set_button($OUTPUT->single_button($url, $string));
 }
 
@@ -112,46 +116,21 @@ if ($hmli->showdescriptionlaunch && $hmli->intro) {
 }
 
 if ( $launchcontainer == LTI_LAUNCH_CONTAINER_WINDOW ) {
-    echo "<script type=\"text/javascript\">//<![CDATA[\n";
-    echo "window.open('".$launchurl."','helixmedia');";
-    echo "//]]\n";
-    echo "</script>\n";
-    echo "<p style='text-align:center;'>".get_string("hml_in_new_window_message", "helixmedia")."</p>";
-    echo "<p style='text-align:center;'><a href='".$launchurl."' target='_blank'>".
-        get_string("hml_in_new_window", "helixmedia")."</a></p>\n";
+    $output = $PAGE->get_renderer('mod_helixmedia');
+    $disp = new \mod_helixmedia\output\viewwindow($launchurl->out(false), 0);
+    echo $output->render($disp);
 } else {
     $size = helixmedia_get_instance_size($hmli->preid, $course->id);
 
     if ($size->audioonly) {
-        echo '<iframe allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" id="contentframe" height="100"'.
-           ' width="100%" src="'.htmlspecialchars($launchurl).'"></iframe>';
+        $height = 100;
     } else {
-
-        // Request the launch content with an iframe tag.
-        echo '<iframe allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" id="contentframe" height="650"'.
-            ' width="100%" src="'.htmlspecialchars($launchurl).'"></iframe>';
-
-        // Output script to make the iframe tag be as large as possible.
-?>
-        <script type="text/javascript">
-                YUI().use("node", function() {
-                var frame = document.getElementById("contentframe");
-                var padding = 250; 
-                var lastHeight;
-                var resize = function(){
-                    var viewportHeight = Y.one("body").get("winHeight");
-                    if(lastHeight !== Math.min(Y.one("body").get("docHeight"), viewportHeight)){
-                        frame.style.height = viewportHeight - Y.one('#contentframe').getY() + padding + "px";
-                        lastHeight = Math.min(Y.one("body").get("docHeight"),viewportHeight);
-                    }
-                };
-                resize();
-                setTimeout(resize, 500);
-
-            });
-        </script>
-<?php
+        $height = 0;
     }
+
+    $output = $PAGE->get_renderer('mod_helixmedia');
+    $disp = new \mod_helixmedia\output\view($launchurl->out(true), $height);
+    echo $output->render($disp);
 }
 // Finish the page.
 echo $OUTPUT->footer();
