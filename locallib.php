@@ -450,23 +450,62 @@ function helixmedia_get_alturl($alt) {
     return substr($statusurl, 0, $pos).$alt;
 }
 
+/**
+* Checks if a MEDIAL resource link id has been used.
+* @param $preid The resource link ID we are interested in
+* @param $as Redundant (was the assignment submission)
+* @param $userid The user who owns the media
+* @return true if the resource link id has nothing associated with it.
+**/
+
 function helixmedia_is_preid_empty($preid, $as, $userid) {
+    return !helixmedia_get_media_status($preid, $userid, true);
+}
+
+/**
+* Gets the status of the uploaded medial.
+* @param $preid The resource link ID we are interested in
+* @param $userid The user who owns the media
+* @param $statusonly true if we only want a true false upload status here
+* @return false if nothing has been uploaded, true or the timestamp the media was linked to the resource link ID (depending on status field)
+* Note, will return a boolean if MEDIAL doesn't return a creation date.
+**/
+
+function helixmedia_get_media_status($preid, $userid, $statusonly = false) {
     global $CFG;
 
-    $retdata = helixmedia_curl_post_launch_html(array("resource_link_id" => $preid, "user_id" => $userid),
+    $retdata = helixmedia_curl_post_launch_html(array("resource_link_id" => $preid, "user_id" => $userid, "json" => "Y"),
         helixmedia_get_upload_url());
 
     // We got a 404, the MEDIAL server doesn't support this call, so return false.
     // The old method was to check for the presence of a resource link ID so this is consistent.
     if (strpos($retdata, "HTTP 404") > 0) {
+        return true;
+    }
+
+    // The MEDIAL server doesn't support the json call (Introduced with 8.0.008)
+    if (strlen($retdata) == 1) {
+        if ($retdata == "Y") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    $json = json_decode($retdata);
+
+    // If nothing uploaded, then just return false.
+    if ($json->uploadStatus == "N") {
         return false;
     }
 
-    if ($retdata == "Y") {
-        return false;
+    // If we got a Y and only want status, return true here.
+    if ($statusonly && $json->uploadStatus == "Y") {
+        return true;
     }
 
-    return true;
+    $dt = new \DateTime($json->createdAt);
+    return $dt->getTimestamp();
 }
 
 
@@ -514,6 +553,8 @@ function helixmedia_version_check() {
 
     $reqver = parse_medial_version(MEDIAL_MIN_VERSION);
     $actualver = parse_medial_version($result);
+
+    set_config('medialversion', $actualver, "helixmedia");
 
     if ($actualver < $reqver) {
         $message .= "<p class='warning'>".get_string('version_check_upgrade', 'helixmedia')."</p>";
