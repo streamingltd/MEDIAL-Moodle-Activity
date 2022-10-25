@@ -249,8 +249,7 @@ if ($mobiletokenid) {
     $tokenrecord = $DB->get_record('helixmedia_mobile', array('id' => $mobiletokenid));
     if (!$tokenrecord ||
         $tokenrecord->token != $mobiletoken ||
-        $tokenrecord->instance != $cm->id ||
-        $tokenrecord->timecreated + 120 < time()) {
+        $tokenrecord->instance != $cm->id) {
             $output = $PAGE->get_renderer('mod_helixmedia');
             $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_mobile_token', 'helixmedia'));
             echo $output->render($disp);
