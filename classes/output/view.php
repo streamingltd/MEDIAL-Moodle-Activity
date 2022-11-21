@@ -43,8 +43,13 @@ class view implements renderable, templatable {
      * Constructor.
      */
     public function __construct($launchurl, $audioonly = false) {
+        global $COURSE;
         $this->launchurl = $launchurl;
         $this->audioonly = $audioonly;
+
+        if ($COURSE->id != 1) {
+            $this->launchurl.='&course='.$COURSE->id;
+        }
     }
 
 

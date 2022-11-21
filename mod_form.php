@@ -82,11 +82,11 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         if ($add) {
             $disp = new \mod_helixmedia\output\modal($preid,
                 array('type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid),
-                array('type' => HML_LAUNCH_EDIT, 'l' => $preid), "moodle-lti-upload-btn.png");
+                array('type' => HML_LAUNCH_EDIT, 'l' => $preid), true);
         } else {
             $disp = new \mod_helixmedia\output\modal($preid,
                 array('type' => HML_LAUNCH_THUMBNAILS, 'id' => $update),
-                array('type' => HML_LAUNCH_EDIT, 'id' => $update), "moodle-lti-upload-btn.png");
+                array('type' => HML_LAUNCH_EDIT, 'id' => $update), true);
         }
 
         $mform->addElement('static', 'choosemedia', get_string('choosemedia_title', 'mod_helixmedia'), $output->render($disp));

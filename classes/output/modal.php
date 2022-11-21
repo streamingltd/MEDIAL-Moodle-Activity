@@ -46,13 +46,13 @@ class modal implements renderable, templatable {
     /**
      * Gets the modal dialog using the supplied params
      * @param pre_id The resource link ID
-     * @param params_thumb The get request parameters for the thumbnail as an array
-     * @param params_link The get request parameters for the modal link as an array
-     * @param type The image to use for the button, false for no icon
-     * @param text The text to use for the button (if no icon) and frame title
+     * @param paramsthumb The get request parameters for the thumbnail as an array
+     * @param paramslink The get request parameters for the modal link as an array
+     * @param image True if we want to use the graphical button
+     * @param text The text to use for the button and frame title
      * @param c The course ID, or -1 if not known
      * @param statusCheck true if the statusCheck method should be used
-     * @param flex Flex type for display. Row for side by side and column for vertical
+     * @param flex Flex type for display. REDUNDANT
      * @param extraid An extra ID item to append on the div id
      * @return The HTML for the dialog
      **/
@@ -66,7 +66,16 @@ class modal implements renderable, templatable {
 
         $this->preid = $preid;
         $this->text = $text;
-        $this->flextype = $flextype;
+
+        // We need to allow extra space in the dialog if we are in editing mode. statuscheck will be set to true when we are editing.
+        if (!$statuscheck) {
+            $this->viewonly = true;
+            $this->edit = false;
+        } else {
+            $this->viewonly = false;
+            $this->edit = true;
+        }
+
         if ($extraid !== false) {
             $this->extraid = '_'.$extraid;
         } else {
@@ -86,11 +95,16 @@ class modal implements renderable, templatable {
         $this->thumblaunchurl = $this->thumblaunchurl->out(false);
         $launchurl = new moodle_url('/mod/helixmedia/launch.php', $paramslink);
         $launchurl = $launchurl->out(false);
-        if ($image ) {
-            $this->imgurl = new moodle_url('/mod/helixmedia/icons/'.$image);
-            $this->imgurl = $this->imgurl->out(false);
+        if ($image) {
+            $this->imgurl = true;
+            if ($image === true) {
+                $this->icon = "upload";
+            } else {
+                $this->icon = $image;
+            }
         } else {
             $this->imgurl = false;
+            $this->icon = false;
         }
         if ($statuscheck != "true") {
             $this->frameid = "thumbframeview";
@@ -131,9 +145,20 @@ class modal implements renderable, templatable {
             'preid' => $this->preid,
             'text' => $this->text,
             'frameid' => $this->frameid,
-            'flextype' => $this->flextype,
-            'extraid' => $this->extraid
+            'extraid' => $this->extraid,
+            'viewonly' => $this->viewonly,
+            'edit' => $this->edit
         ];
+
+        switch ($this->icon) {
+            case 'upload':
+                $data['uploadicon'] = true;
+                break;
+            case 'magnifier':
+                $data['magnifiericon'] = true;
+                break;
+        }
+
         return $data;
     }
 }

@@ -95,7 +95,13 @@ class launcher implements renderable, templatable {
             case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
             case HML_LAUNCH_FEEDBACK_THUMBNAILS:
             case HML_LAUNCH_VIEW_FEEDBACK_THUMBNAILS:
-                $typeconfig['customparameters'] .= "\nthumbnail=Y\nthumbnail_width=176\nthumbnail_height=99";
+                // For MEDIAL 8.0.07 and higher we can use a responsive thumbnail
+
+                if ($modconfig->medialversion >= 80007) {
+                    $typeconfig['customparameters'] .= "\nthumbnail=Y\nthumbnail_width=-1\nthumbnail_height=-1";
+                } else {
+                    $typeconfig['customparameters'] .= "\nthumbnail=Y\nthumbnail_width=230\nthumbnail_height=129";
+                }
                 $this->size = 64;
                 break;
         }

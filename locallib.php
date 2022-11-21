@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->dirroot.'/mod/lti/lib.php');
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
+require_once($CFG->dirroot.'/lib/filelib.php');
 
 // Activity types.
 define('HML_LAUNCH_NORMAL', 1);
@@ -123,50 +124,35 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
     $params['oauth_consumer_key'] = $modconfig->consumer_key;
 
     set_time_limit(0);
-    $ch = curl_init($endpoint);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 50);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_VERBOSE, 1);
-    curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (compatible; curl; like Firefox)");
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
-    curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
     $cookiesfile = $CFG->dataroot.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR."helixmedia-curl-cookies-".microtime(true).".tmp";
     while (file_exists($cookiesfile)) {
         $cookiesfile = $CFG->dataroot.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.
             "helixmedia-curl-cookies-".microtime(true).".tmp";
     }
-    curl_setopt($ch, CURLOPT_COOKIESESSION, true);
-    curl_setopt($ch, CURLOPT_COOKIEFILE, $cookiesfile);
-    curl_setopt($ch, CURLOPT_COOKIEJAR, $cookiesfile);
 
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-
-    // Uncomment this for verbose debugging
-    // curl_setopt($ch, CURLOPT_VERBOSE, true);
-    // $verbose = fopen('php://temp', 'rw+');
-    // curl_setopt($ch, CURLOPT_STDERR, $verbose);
-
-    $result = curl_exec($ch);
-    if (curl_errno($ch)) {
-        notice("CURL Error connecting to HML LTI: ".curl_error($ch));
+    $curl = new \curl();
+    $curl->setopt(array(
+        'CURLOPT_TIMEOUT' => 50,
+        'CURLOPT_CONNECTTIMEOUT' => 30,
+        'CURLOPT_FOLLOWLOCATION' => true,
+        'CURLOPT_VERBOSE' => 1,
+        'CURLOPT_FRESH_CONNECT' => true,
+        'CURLOPT_FORBID_REUSE' => true,
+        'CURLOPT_RETURNTRANSFER' => true,
+        'CURLOPT_COOKIESESSION' => true,
+        'CURLOPT_COOKIEFILE' => $cookiesfile,
+        'CURLOPT_COOKIEJAR' => $cookiesfile
+        //'CURLOPT_SSL_VERIFYHOST' => false,
+        //'CURLOPT_SSL_VERIFYPEER' => false
+    ));
+    $result = $curl->post($endpoint, $params);
+    $resp = $curl->get_info();
+    if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
+        $r = $curl->get_raw_response();
+        return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
+              "<p>".get_string("version_check_fail", "helixmedia")."</p>";
     }
-    curl_close($ch);
-
-    // Uncomment this for verbose debugging
-    // if ($result === FALSE) {
-    // printf("cUrl error (#%d): %s<br>\n", curl_errno($curlHandle),
-    // htmlspecialchars(curl_error($curlHandle)));
-    // }
-    // rewind($verbose);
-    // $verboseLog = stream_get_contents($verbose);
-    // echo "Verbose information:\n<pre>", htmlspecialchars($verboseLog), "</pre>\n";
 
     if (file_exists($cookiesfile)) {
         unlink($cookiesfile);
@@ -450,23 +436,62 @@ function helixmedia_get_alturl($alt) {
     return substr($statusurl, 0, $pos).$alt;
 }
 
+/**
+* Checks if a MEDIAL resource link id has been used.
+* @param $preid The resource link ID we are interested in
+* @param $as Redundant (was the assignment submission)
+* @param $userid The user who owns the media
+* @return true if the resource link id has nothing associated with it.
+**/
+
 function helixmedia_is_preid_empty($preid, $as, $userid) {
+    return !helixmedia_get_media_status($preid, $userid, true);
+}
+
+/**
+* Gets the status of the uploaded medial.
+* @param $preid The resource link ID we are interested in
+* @param $userid The user who owns the media
+* @param $statusonly true if we only want a true false upload status here
+* @return false if nothing has been uploaded, true or the timestamp the media was linked to the resource link ID (depending on status field)
+* Note, will return a boolean if MEDIAL doesn't return a creation date.
+**/
+
+function helixmedia_get_media_status($preid, $userid, $statusonly = false) {
     global $CFG;
 
-    $retdata = helixmedia_curl_post_launch_html(array("resource_link_id" => $preid, "user_id" => $userid),
+    $retdata = helixmedia_curl_post_launch_html(array("resource_link_id" => $preid, "user_id" => $userid, "json" => "Y"),
         helixmedia_get_upload_url());
 
     // We got a 404, the MEDIAL server doesn't support this call, so return false.
     // The old method was to check for the presence of a resource link ID so this is consistent.
     if (strpos($retdata, "HTTP 404") > 0) {
+        return true;
+    }
+
+    // The MEDIAL server doesn't support the json call (Introduced with 8.0.008)
+    if (strlen($retdata) == 1) {
+        if ($retdata == "Y") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    $json = json_decode($retdata);
+
+    // If nothing uploaded, then just return false.
+    if ($json->uploadStatus == "N") {
         return false;
     }
 
-    if ($retdata == "Y") {
-        return false;
+    // If we got a Y and only want status, return true here.
+    if ($statusonly && $json->uploadStatus == "Y") {
+        return true;
     }
 
-    return true;
+    $dt = new \DateTime($json->createdAt);
+    return $dt->getTimestamp();
 }
 
 
@@ -488,24 +513,25 @@ function helixmedia_version_check() {
     $pos = helixmedia_str_contains(strtolower($statusurl), "/lti/launch", true);
     $endpoint = substr($statusurl, 0, $pos)."/version.txt";
 
-    $ch = curl_init($endpoint);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 50);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_VERBOSE, 1);
-    curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (compatible; curl; like Firefox)");
-    curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
-    curl_setopt($ch, CURLOPT_FORBID_REUSE, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-    $result = trim(curl_exec($ch));
-    if (curl_errno($ch)) {
-        return "<p>CURL Error connecting to MEDIAL: ".curl_error($ch)."</p>".
+    $curl = new \curl();
+    $curl->setopt(array(
+        'CURLOPT_TIMEOUT' => 50,
+        'CURLOPT_CONNECTTIMEOUT' => 30,
+        'CURLOPT_FOLLOWLOCATION' => true,
+        'CURLOPT_VERBOSE' => 1,
+        'CURLOPT_FRESH_CONNECT' => true,
+        'CURLOPT_FORBID_REUSE' => true,
+        'CURLOPT_RETURNTRANSFER' => true,
+        //'CURLOPT_SSL_VERIFYHOST' => false,
+        //'CURLOPT_SSL_VERIFYPEER' => false
+    ));
+    $result = $curl->get($endpoint);
+    $resp = $curl->get_info();
+    if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
+        $r = $curl->get_raw_response();
+        return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
               "<p>".get_string("version_check_fail", "helixmedia")."</p>";
     }
-    curl_close($ch);
 
     $v = new stdclass();
     $v->min = MEDIAL_MIN_VERSION;
@@ -515,11 +541,13 @@ function helixmedia_version_check() {
     $reqver = parse_medial_version(MEDIAL_MIN_VERSION);
     $actualver = parse_medial_version($result);
 
+    set_config('medialversion', $actualver, "helixmedia");
+
     if ($actualver < $reqver) {
         $message .= "<p class='warning'>".get_string('version_check_upgrade', 'helixmedia')."</p>";
     }
 
-    return $message."<br />";
+    return $message;
 }
 
 function parse_medial_version($str) {

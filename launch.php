@@ -46,17 +46,23 @@ $debug = optional_param('debuglaunch', 0, PARAM_INT);
 // Course ID.
 // Note using $COURSE->id here seems to give random results.
 global $USER;
-if (property_exists($USER, 'currentcourseaccess')) {
-    $cid = array_keys($USER->currentcourseaccess);
-    if (array_key_exists(0, $cid)) {
-        $cid = $cid[0];
+
+$c  = optional_param('course', false, PARAM_INT);
+if ($c === false) {
+    if (property_exists($USER, 'currentcourseaccess')) {
+        $cid = array_keys($USER->currentcourseaccess);
+        if (array_key_exists(0, $cid)) {
+            $c = $cid[0];
+        } else {
+            $c = 1;
+        }
     } else {
-        $cid = 1;
+        $c = $COURSE->id;
     }
+    $courseinc = false;
 } else {
-    $cid = $COURSE->id;
+    $courseinc = true;
 }
-$c  = optional_param('course', $cid, PARAM_INT);
 
 // New assignment submission ID.
 $nassign = optional_param('n_assign', 0, PARAM_INT);
@@ -128,7 +134,7 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
     }
 
     if ($type == HML_LAUNCH_TINYMCE_VIEW || $type == HML_LAUNCH_ATTO_VIEW) {
-        if (strpos($_SERVER ['HTTP_USER_AGENT'], 'MoodleMobile') !== false) {
+        if ((!$courseinc || !isloggedin()) && strpos($_SERVER ['HTTP_USER_AGENT'], 'MoodleMobile') !== false) {
             $output = $PAGE->get_renderer('mod_helixmedia');
             $disp = new \mod_helixmedia\output\launchmessage(get_string('moodlemobile', 'helixmedia'));
             echo $output->render($disp);
@@ -243,8 +249,7 @@ if ($mobiletokenid) {
     $tokenrecord = $DB->get_record('helixmedia_mobile', array('id' => $mobiletokenid));
     if (!$tokenrecord ||
         $tokenrecord->token != $mobiletoken ||
-        $tokenrecord->instance != $cm->id ||
-        $tokenrecord->timecreated + 120 < time()) {
+        $tokenrecord->instance != $cm->id) {
             $output = $PAGE->get_renderer('mod_helixmedia');
             $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_mobile_token', 'helixmedia'));
             echo $output->render($disp);
