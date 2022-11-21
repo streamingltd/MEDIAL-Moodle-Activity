@@ -80,8 +80,7 @@ class mobile {
             'cmid' => $cm->id,
             'courseid' => $args->courseid,
             'launchurl' => $launchurl,
-            'showdescription' => $helixmedia->showdescriptionlaunch,
-            'jsresize' => !$size->audioonly
+            'showdescription' => $helixmedia->showdescriptionlaunch
         );
 
         if ($size->audioonly) {
