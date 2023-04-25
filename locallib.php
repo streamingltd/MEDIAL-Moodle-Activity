@@ -131,6 +131,8 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
             "helixmedia-curl-cookies-".microtime(true).".tmp";
     }
 
+    
+    
     $curl = new \curl();
     $curl->setopt(array(
         'CURLOPT_TIMEOUT' => 50,
@@ -146,6 +148,34 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
         //'CURLOPT_SSL_VERIFYHOST' => false,
         //'CURLOPT_SSL_VERIFYPEER' => false
     ));
+    // Check for Moodle proxy settings
+    if (!empty($CFG->proxyhost)) {
+        // SOCKS supported in PHP5 only
+        if (!empty($CFG->proxytype) && ($CFG->proxytype == 'SOCKS5')) {
+            if (defined('CURLPROXY_SOCKS5')) {
+                $curl->setopt(CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+            } else {
+                $curl->close();
+                print_error( 'socksnotsupported','mnet' );
+            }
+        }
+
+        $curl->setopt(CURLOPT_HTTPPROXYTUNNEL, false);
+
+        if (empty($CFG->proxyport)) {
+            $curl->setopt(CURLOPT_PROXY, $CFG->proxyhost);
+        } else {
+            $curl->setopt(CURLOPT_PROXY, $CFG->proxyhost.':'.$CFG->proxyport);
+        }
+
+        if (!empty($CFG->proxyuser) and !empty($CFG->proxypassword)) {
+            $curl->setopt(CURLOPT_PROXYUSERPWD, $CFG->proxyuser.':'.$CFG->proxypassword);
+            if (defined('CURLOPT_PROXYAUTH')) {
+                // any proxy authentication if PHP 5.1
+                $curl->setopt(CURLOPT_PROXYAUTH, CURLAUTH_BASIC | CURLAUTH_NTLM);
+            }
+        }
+    }
     $result = $curl->post($endpoint, $params);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
