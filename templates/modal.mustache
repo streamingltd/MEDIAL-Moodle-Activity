@@ -3,7 +3,7 @@
         z-index:-1;
     }
 </style>
-<div id="mod_helixmedia_modal_{{preid}}{{extraid}}" class="modal fade" role="dialog" data-backdrop="false" >
+<div id="mod_helixmedia_modal_{{preid}}{{extraid}}" class="modal fade mod_helixmedia_modal_custom" role="dialog" data-backdrop="false" >
   <div class="modal-dialog" style="max-width:1000px" >
     <div class="modal-content">
       <div class="modal-header">
@@ -15,7 +15,8 @@
       <div class="modal-body p-0 pt-2" id="mod_helixmedia_modal_body">
           <div class="embed-responsive {{#viewonly}}embed-responsive-16by9{{/viewonly}}{{#edit}}helixmedia_dialog{{/edit}}">
               <iframe id="mod_helixmedia_launchframe_{{preid}}{{extraid}}" class="embed-responsive-item overflow-auto border-0" 
-                  allow="microphone {{medialurl}}; camera {{medialurl}}"></iframe>
+                  allow="microphone {{medialurl}}; camera {{medialurl}}; display-capture {{medialurl}};"
+                  allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"></iframe>
           </div>
       </div>
     </div>

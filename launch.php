@@ -50,11 +50,13 @@ global $USER;
 $c  = optional_param('course', false, PARAM_INT);
 if ($c === false) {
     if (property_exists($USER, 'currentcourseaccess')) {
-        $cid = array_keys($USER->currentcourseaccess);
-        if (array_key_exists(0, $cid)) {
-            $c = $cid[0];
-        } else {
-            $c = 1;
+        $c = 1;
+        $lastime = 0;
+        // Find the most recent course access, this should be the course we are in since the page just loaded.
+        foreach ($USER->currentcourseaccess as $key => $time) {
+            if ($time > $lastime) {
+                $c = $key;
+            }
         }
     } else {
         $c = $COURSE->id;

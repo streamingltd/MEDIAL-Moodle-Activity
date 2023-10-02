@@ -110,7 +110,7 @@ class launcher implements renderable, templatable {
             case HML_LAUNCH_NORMAL:
             case HML_LAUNCH_TINYMCE_VIEW:
             case HML_LAUNCH_ATTO_VIEW:
-                $typeconfig['customparameters'] .= "\nview_only=Y\nno_horiz_borders=Y";
+                $typeconfig['customparameters'] .= "\nview_only=Y\nno_horiz_borders=Y\nplay_only=Y";
                 $this->text = get_string('pleasewait', 'helixmedia');
                 break;
             case HML_LAUNCH_EDIT:
@@ -121,9 +121,10 @@ class launcher implements renderable, templatable {
                 break;
             case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
                 // Nothing to do here.
+                $typeconfig['customparameters'] .= "\nplay_only=Y";
                 break;
             case HML_LAUNCH_STUDENT_SUBMIT:
-                $typeconfig['customparameters'] .= "\nlink_response=Y\nlink_type=Assignment";
+                $typeconfig['customparameters'] .= "\nlink_response=Y\nlink_type=Assignment\nplay_only=Y";
                 $typeconfig['customparameters'] .= "\nassignment_ref=".$instance->cmid;
                 $typeconfig['customparameters'] .= "\ntemp_assignment_ref=".helixmedia_get_assign_into_refs($instance->cmid)."\n";
                 $typeconfig['customparameters'] .= "\ngroup_assignment=".helixmedia_is_group_assign($instance->cmid);
@@ -179,31 +180,6 @@ class launcher implements renderable, templatable {
 
         if ($orgid) {
             $requestparams["tool_consumer_instance_guid"] = $orgid;
-        }
-
-        switch ($type) {
-            case HML_LAUNCH_EDIT:
-            case HML_LAUNCH_STUDENT_SUBMIT:
-            case HML_LAUNCH_FEEDBACK:
-            case HML_LAUNCH_TINYMCE_EDIT:
-            case HML_LAUNCH_TINYMCE_VIEW:
-            case HML_LAUNCH_ATTO_EDIT:
-            case HML_LAUNCH_ATTO_VIEW:
-                break;
-            default:
-                // Mobile devices launch without the Moodle frame, so we need a return URL here.
-
-                if (method_exists("core_useragent", "check_browser_version")) {
-                    $devicetype = \core_useragent::get_device_type();
-                } else {
-                    $devicetype = get_device_type();
-                }
-                if ($devicetype === 'mobile' || $devicetype === 'tablet' ) {
-                    $returnurlparams = array('id' => $course->id);
-                    $url = new \moodle_url('/course/view.php', $returnurlparams);
-                    $returnurl = $url->out(false);
-                    $requestparams['launch_presentation_return_url'] = $returnurl;
-                }
         }
 
         $this->params = lti_sign_parameters($requestparams, $this->endpoint, "POST", $modconfig->consumer_key, $modconfig->shared_secret);

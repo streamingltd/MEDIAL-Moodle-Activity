@@ -63,7 +63,7 @@ define('HML_LAUNCH_ATTO_VIEW', 16);
 // Note next ID should be 18.
 
 // For version check.
-define('MEDIAL_MIN_VERSION', '6.0.054');
+define('MEDIAL_MIN_VERSION', '8.0.000');
 
 
 function helixmedia_is_group_assign($cmid) {
@@ -315,16 +315,6 @@ function helix_split_custom_parameters($customstr) {
 function helixmedia_get_ims_role($user, $cmid, $courseid, $type, $modtype) {
     $roles = array();
 
-    // Always use the Learner role if this is a student submission or a view operation, MEDIAL expects this.
-    if ($type == HML_LAUNCH_NORMAL ||
-        $type == HML_LAUNCH_TINYMCE_VIEW ||
-        $type == HML_LAUNCH_ATTO_VIEW ||
-        $type == HML_LAUNCH_STUDENT_SUBMIT ||
-        $type == HML_LAUNCH_STUDENT_SUBMIT_PREVIEW ||
-        $type == HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS) {
-        return "Learner";
-    }
-
     $coursecontext = context_course::instance($courseid);
     if (empty($cmid) || $cmid == -1) {
         // If no cmid is passed, check if the user is a teacher in the course
@@ -529,7 +519,7 @@ function helixmedia_version_check() {
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
         $r = $curl->get_raw_response();
-        return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
+        return "<p>CURL Error connecting to MEDIAL: ".$r[0]." url:".$endpoint.", response is '".$result."'</p>".
               "<p>".get_string("version_check_fail", "helixmedia")."</p>";
     }
 
