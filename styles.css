@@ -70,3 +70,7 @@
         padding-top: 100% !important;
     }
 }
+
+.helixmedia_embedheight {
+    max-width:1500px;
+}
