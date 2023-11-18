@@ -78,3 +78,4 @@ $string['assignfeedltititle'] = 'Feedback for {$a}';
 $string['launcher'] = 'MEDIAL LTI Launcher';
 $string['pleasewait'] = 'Media Loading - Please Wait';
 $string['pleasewaitup'] = 'Loading - Please Wait';
+$string['privacy:metadata'] = 'The mod_helixmedia plugin does not store any personal data.';
