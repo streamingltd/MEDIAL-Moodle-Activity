@@ -125,6 +125,11 @@ function helixmedia_preallocate_id() {
  */
 function helixmedia_get_preid($cmid) {
     global $DB;
+
+    if ($cmid == null) {
+        return null;
+    }
+
     $cm = get_coursemodule_from_id('helixmedia', $cmid, 0, false, MUST_EXIST);
     $hmli = $DB->get_record('helixmedia', array('id' => $cm->instance), '*', MUST_EXIST);
     return $hmli->preid;
