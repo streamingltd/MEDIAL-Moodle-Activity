@@ -60,7 +60,11 @@ define('HML_LAUNCH_VIEW_FEEDBACK_THUMBNAILS', 14);
 define('HML_LAUNCH_ATTO_EDIT', 15);
 define('HML_LAUNCH_ATTO_VIEW', 16);
 
-// Note next ID should be 18.
+// Launch Type that shows the MEDIAL library and does not allow for content selection.
+// Allows the user to manage their content. Implmented in tiny_medial plugin.
+define('HML_LAUNCH_LIB_ONLY', 18);
+
+// Note next ID should be 19.
 
 // For version check.
 define('MEDIAL_MIN_VERSION', '8.0.000');
@@ -344,25 +348,32 @@ function helixmedia_get_ims_role($user, $cmid, $courseid, $type, $modtype) {
 /**
  * Checks the moduletype we are viewing here to see if we can use the more permissive modtype permission
  * @param $modtype The module type
+ * @param $edtype The editor type to look in
  * @return The permission to use
  **/
-function helixmedia_get_visiblecap($modtype = false) {
+function helixmedia_get_visiblecap($modtype = false, $edtype = 'atto/helixatto') {
     if (!$modtype) {
-        return 'atto/helixatto:visible';
+        return $edtype.':visible';
     }
 
     global $DB;
-    $config = get_config('atto_helixatto', 'modtypeperm');
+    $config = get_config(str_replace('/', '_', $edtype), 'modtypeperm');
+
+    // If the config is missing, return the default permission. This should only happen if this is a TinyMCE legacy plugin edit.
+    if (!$config) {
+        return 'mod/helixmedia:addinstance';
+    }
+
     $types = explode("\n", $config);
 
     for ($i = 0; $i < count($types); $i++) {
         $types[$i] = trim($types[$i]);
         if (strlen($types[$i]) > 0 && $types[$i] == $modtype && $DB->get_record('modules', array('name' => $types[$i]))) {
-            return 'atto/helixatto:visiblemodtype';
+            return $edtype.':visiblemodtype';
         }
     }
 
-    return 'atto/helixatto:visible';
+    return $edtype;
 }
 
 function curpageurl() {
@@ -518,8 +529,7 @@ function helixmedia_version_check() {
     $result = $curl->get($endpoint);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
-        $r = $curl->get_raw_response();
-        return "<p>CURL Error connecting to MEDIAL: ".$r[0]." url:".$endpoint.", response is '".$result."'</p>".
+        return "<p>CURL Error connecting to MEDIAL: url:".$endpoint.", response is '".$result."'</p>".
               "<p>".get_string("version_check_fail", "helixmedia")."</p>";
     }
 
@@ -559,11 +569,13 @@ function helixmedia_legacy_dynamic_size($hmli, $c) {
         if ($size->height == -1) {
             $ratio = 0.85;
         }
-        echo "<script type=\"text/javascript\">\n".
+        return "<script type=\"text/javascript\">\n".
              "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');\n".
+             "if (vid != null) {\n".
              "var h=parseInt(vid.parentElement.offsetWidth*".$ratio.");\n".
              "vid.style.width='100%';\n".
              "if (h>0) {vid.style.height=h+'px';}\n".
+             "}\n".
              "</script>\n";
     } else {
         // If height is -1, use old size rules.
@@ -598,10 +610,12 @@ function helixmedia_legacy_dynamic_size($hmli, $c) {
             }
         }
 
-        echo "<script type=\"text/javascript\">\n".
+        return "<script type=\"text/javascript\">\n".
              "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');".
+             "if (vid != null) {\n".
              "vid.style.width='".$w."';\n".
              "vid.style.height='".$h."';\n".
+             "}\n".
              "</script>\n";
     }
 }

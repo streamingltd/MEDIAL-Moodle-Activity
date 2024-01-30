@@ -16,11 +16,11 @@
                          {{/magnifiericon}}
                          {{#uploadicon}}
                              <svg height="32" width="32"><svg x="0" y="0"><path d="M16.875,4.341l8.855,8.811C26.199,13.621,26.042,14,25.379,14h-5.378v6.8c0,0.662-0.537,1.199-1.2,1.199H13.2c-0.662,0-1.199-0.537-1.199-1.199V14H6.622c-0.664,0-0.82-0.379-0.352-0.848l8.857-8.811C15.61,3.886,16.393,3.886,16.875,4.341z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.96)" stroke-dasharray=""></path></svg><svg x="0" y="0"><path d="M30,26.8c0,0.663-0.537,1.2-1.2,1.2H3.2C2.537,28,2,27.463,2,26.8v-4.2C2,22.293,2.297,22,2.6,22h2.8C5.703,22,6,22.293,6,22.6V24h20v-1.4c0-0.307,0.299-0.6,0.601-0.6h2.8c0.302,0,0.6,0.293,0.6,0.6V26.8z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.96) " stroke-dasharray=""></path></svg></svg>
-                     {{/uploadicon}}
+                         {{/uploadicon}}
                     </div>
                 </div></div>
             </a>
         </div>
     </div>
 </div>
-{{>mod_helixmedia/modal}}
+{{^viewonly}}{{^library}}{{>mod_helixmedia/modal}}{{/library}}{{/viewonly}}

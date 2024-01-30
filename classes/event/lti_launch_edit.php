@@ -82,16 +82,6 @@ class lti_launch_edit extends \core\event\base {
     }
 
     /**
-     * Return the legacy event log data.
-     *
-     * @return array|null
-     */
-    protected function get_legacy_logdata() {
-        return array($this->courseid, $this->objecttable, 'editlaunch', 'launch.php?id=' . $this->contextinstanceid .
-            '&type=' . HML_LAUNCH_EDIT, $this->objectid, $this->contextinstanceid);
-    }
-
-    /**
      * Custom validation.
      *
      * @throws \coding_exception

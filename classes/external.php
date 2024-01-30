@@ -56,7 +56,7 @@ class mod_helixmedia_external extends external_api {
 
         $tokenid = $DB->insert_record("helixmedia_mobile", array(
             'instance' => $id,
-            'user' => $userid,
+            'userid' => $userid,
             'course' => $course,
             'token' => $token,
             'timecreated' => time())

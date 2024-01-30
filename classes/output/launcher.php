@@ -48,13 +48,14 @@ class launcher implements renderable, templatable {
      * @param $ret The return URL to set for the modal dialogue
      */
 
-    public function __construct($instance, $type, $ref, $ret, $user, $modtype, $postscript) {
+    public function __construct($instance, $type, $ref, $ret, $user, $modtype, $postscript, $legacyjsresize = false) {
         global $CFG, $DB;
 
         $this->postscript = $postscript;
         $this->preid = $instance->preid;
         $this->text = false;
         $this->size = 128;
+        $this->legacyjsresize = $legacyjsresize;
 
         $modconfig = get_config("helixmedia");
 
@@ -205,7 +206,8 @@ class launcher implements renderable, templatable {
             'preid' => $this->preid,
             'pleasewait' => !$this->debuglaunch,
             'text' => $this->text,
-            'size' => $this->size
+            'size' => $this->size,
+            'legacyjsresize' => $this->legacyjsresize
         ];
         return $data;
     }
