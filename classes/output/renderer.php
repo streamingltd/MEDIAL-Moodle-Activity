@@ -78,6 +78,9 @@ class renderer extends plugin_renderer_base {
         $data = $fd->export_for_template($this);
         $fd->inc_js();
         if (!$data['imgurl']) {
+            if ($data['library'] !== false) {
+                return $this->render_from_template('mod_helixmedia/modallib', $data);
+            }
             return $this->render_from_template('mod_helixmedia/modallink', $data);
         } else {
             return $this->render_from_template('mod_helixmedia/modalbutton', $data);

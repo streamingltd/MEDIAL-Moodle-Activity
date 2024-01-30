@@ -57,8 +57,8 @@ class modal implements renderable, templatable {
      * @return The HTML for the dialog
      **/
     public function __construct($preid, $paramsthumb, $paramslink, $image,
-        $text = false, $c = false, $statuscheck = true, $flextype = 'row', $extraid = false) {
-        global $CFG, $COURSE, $DB, $USER;
+        $text = false, $c = false, $statuscheck = true, $flextype = 'row', $extraid = false, $library = false) {
+        global $CFG, $COURSE, $DB, $USER, $OUTPUT;
 
         if (!$text) {
             $text = get_string('choosemedia_title', 'helixmedia');
@@ -66,7 +66,11 @@ class modal implements renderable, templatable {
 
         $this->preid = $preid;
         $this->text = $text;
-
+        if ($library) {
+            $this->library = $OUTPUT->image_url('library', 'mod_helixmedia');
+        } else {
+            $this->library = false;
+        }
         // We need to allow extra space in the dialog if we are in editing mode. statuscheck will be set to true when we are editing.
         if (!$statuscheck) {
             $this->viewonly = true;
@@ -90,6 +94,8 @@ class modal implements renderable, templatable {
         $paramsthumb['course'] = $course->id;
         $paramslink['course'] = $course->id;
         $paramslink['ret'] = base64_encode(curpageurl());
+        // Turn off the legacy resize, not needed for this type of embed
+        $paramslink['responsive'] = 1;
 
         $this->thumblaunchurl = new moodle_url('/mod/helixmedia/launch.php', $paramsthumb);
         $this->thumblaunchurl = $this->thumblaunchurl->out(false);
@@ -125,13 +131,19 @@ class modal implements renderable, templatable {
             $CFG->wwwroot."/mod/helixmedia/session.php",
             ($CFG->sessiontimeout / 2) * 1000,
             intval($modconfig->modal_delay),
-            $this->extraid
+            $this->extraid,
+            $this->text,
+            $this->library
         );
     }
 
     public function inc_js() {
         global $PAGE;
-        $PAGE->requires->js_call_amd('mod_helixmedia/module', 'init', $this->jsparams);
+        if ($this->viewonly || $this->library) {
+            $PAGE->requires->js_call_amd('mod_helixmedia/embed', 'init', $this->jsparams);
+        } else {
+            $PAGE->requires->js_call_amd('mod_helixmedia/module', 'init', $this->jsparams);
+        }
     }
 
 
@@ -147,7 +159,8 @@ class modal implements renderable, templatable {
             'frameid' => $this->frameid,
             'extraid' => $this->extraid,
             'viewonly' => $this->viewonly,
-            'edit' => $this->edit
+            'edit' => $this->edit,
+            'library' => $this->library,
         ];
 
         switch ($this->icon) {

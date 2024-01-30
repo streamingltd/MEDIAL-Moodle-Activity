@@ -109,10 +109,10 @@ if (strlen($ret) > 0) {
 $hmli = null;
 $cmid = -1;
 $postscript = false;
-
+$legacyjsresize = false;
 
 if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML_LAUNCH_TINYMCE_VIEW ||
-    $type == HML_LAUNCH_ATTO_EDIT || $type == HML_LAUNCH_ATTO_VIEW) {
+    $type == HML_LAUNCH_ATTO_EDIT || $type == HML_LAUNCH_ATTO_VIEW || $type == HML_LAUNCH_LIB_ONLY) {
     // This means that we're doing a "fake" launch for a new instance or viewing via a link created in TinyMCE/ATTO.
 
     $hmli = new stdclass();
@@ -144,7 +144,7 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
         }
 
         if ($responsive == 0) {
-            helixmedia_legacy_dynamic_size($hmli, $c);
+            $legacyjsresize = helixmedia_legacy_dynamic_size($hmli, $c);
         }
     }
 
@@ -229,7 +229,7 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
             } else {
                 $output = $PAGE->get_renderer('mod_helixmedia');
                 $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_launch', 'helixmedia'), 'error');
-                echo $output->render($disp);
+                echo $output->render($disp). $type;
                 exit(0);
             }
         }
@@ -257,7 +257,7 @@ if ($mobiletokenid) {
             echo $output->render($disp);
             exit(0);
     }
-    $user = $DB->get_record('user', array('id' => $tokenrecord->user));
+    $user = $DB->get_record('user', array('id' => $tokenrecord->userid));
 } else {
     require_login($course);
     $user = $USER;
@@ -272,11 +272,17 @@ switch ($type) {
     case HML_LAUNCH_ATTO_VIEW:
     case HML_LAUNCH_VIEW_FEEDBACK:
     case HML_LAUNCH_VIEW_FEEDBACK_THUMBNAILS:
-        $cap = 'mod/helixmedia:view';
+        if ($course->id == SITEID) {
+            $cap = 'mod/helixmedia:myview';
+        } else {
+            $cap = 'mod/helixmedia:view';
+        }
         break;
     case HML_LAUNCH_EDIT:
-    case HML_LAUNCH_TINYMCE_EDIT:
         $cap = 'mod/helixmedia:addinstance';
+        break;
+    case HML_LAUNCH_TINYMCE_EDIT:
+        $cap = helixmedia_get_visiblecap($modtype, 'tiny/medial');
         break;
     case HML_LAUNCH_ATTO_EDIT:
         $cap = helixmedia_get_visiblecap($modtype);
@@ -291,6 +297,13 @@ switch ($type) {
     case HML_LAUNCH_FEEDBACK:
     case HML_LAUNCH_FEEDBACK_THUMBNAILS:
         $cap = 'mod/assign:grade';
+        break;
+    case HML_LAUNCH_LIB_ONLY:
+        if ($course->id == SITEID) {
+            $cap = 'mod/helixmedia:myview';
+        } else {
+            $cap = 'mod/helixmedia:view';
+        }
         break;
 }
 
@@ -312,20 +325,31 @@ if ( ($modconfig->forcedebug && $modconfig->restrictdebug && is_siteadmin()) ||
 // Do the logging.
 if ($type == HML_LAUNCH_NORMAL || $type == HML_LAUNCH_EDIT) {
 
+    // Moodle 4.2+ now emits a warning if legacy log methods are present in events
+    // So we don't have to split the code base use a sub class if we actually need legacy logging here 
+    if ($CFG->version < 2023042400 && get_config('logstore_legacy', 'loglegacy') == 1) {
+        $cname = '_compat';
+    } else {
+        $cname = '';
+    }
+
     if ($type == HML_LAUNCH_EDIT) {
         if ($l) {
-            $event = \mod_helixmedia\event\lti_launch_edit_new::create(array(
+            $cname = '\mod_helixmedia\event\lti_launch_edit'.$cname.'_new';
+            $event = $cname::create(array(
                 'objectid' => $hmli->id,
                 'context' => $context
             ));
         } else {
-            $event = \mod_helixmedia\event\lti_launch_edit::create(array(
+            $cname = '\mod_helixmedia\event\lti_launch'.$cname.'_edit';
+            $event = $cname::create(array(
                 'objectid' => $hmli->id,
                 'context' => $context
             ));
         }
     } else {
-        $event = \mod_helixmedia\event\lti_launch::create(array(
+        $cname = '\mod_helixmedia\event\lti'.$cname.'_launch';
+        $event = $cname::create(array(
             'objectid' => $hmli->id,
             'context' => $context
         ));
@@ -361,6 +385,6 @@ $PAGE->set_title('');
 $PAGE->set_heading('');
 echo $OUTPUT->header();
 $output = $PAGE->get_renderer('mod_helixmedia');
-$disp = new \mod_helixmedia\output\launcher($hmli, $type, $mid, $ret, $user, $modtype, $postscript);
+$disp = new \mod_helixmedia\output\launcher($hmli, $type, $mid, $ret, $user, $modtype, $postscript, $legacyjsresize);
 echo $output->render($disp);
 echo $OUTPUT->footer();

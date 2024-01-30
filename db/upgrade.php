@@ -91,6 +91,20 @@ function xmldb_helixmedia_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2020021101, 'helixmedia');
     }
 
+    if ($oldversion < 2023122001) {
+
+        // Rename field userid on table helixmedia_mobile to NEWNAMEGOESHERE.
+        $table = new xmldb_table('helixmedia_mobile');
+        $field = new xmldb_field('user', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'instance');
+
+        // Launch rename field userid.
+        $dbman->rename_field($table, $field, 'userid');
+
+        // Helixmedia savepoint reached.
+        upgrade_mod_savepoint(true, 2023122001, 'helixmedia');
+    }
+
+
     try {
         echo helixmedia_version_check();
     } catch (Exception $e) {

@@ -34,7 +34,7 @@ defined('MOODLE_INTERNAL') || die();
  * @package    mod_helixmedia
  * @since      Moodle 2.7
  * @copyright  2015 Streaming LTD
- * @author     Tim Williams tmw@autotrain.org
+ * @author     Tim Williams tim@medial.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -77,16 +77,6 @@ class lti_launch_edit_new extends \core\event\base {
      */
     public function get_url() {
         return null;
-    }
-
-    /**
-     * Return the legacy event log data.
-     *
-     * @return array|null
-     */
-    protected function get_legacy_logdata() {
-        return array($this->courseid, $this->objecttable, 'editlaunchnew', '', $this->objectid,
-                     $this->contextinstanceid);
     }
 
     /**

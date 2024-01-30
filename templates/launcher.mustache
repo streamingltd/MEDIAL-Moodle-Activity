@@ -4,9 +4,12 @@
 
 {{#postscript}}
 <script type="text/javascript">
+console.log("postmessage {{preid}}");
     window.parent.postMessage('preid_{{preid}}', '*');
 </script>
 {{/postscript}}
+
+{{{legacyjsresize}}}
 
 {{#pleasewait}}
 <div class='container' style='font-family: Nunito, sans-serif'>

@@ -62,7 +62,7 @@ class mobile {
         $token = self::random_code(40);
         $tokenid = $DB->insert_record("helixmedia_mobile", array(
             'instance' => $cm->id,
-            'user' => $USER->id,
+            'userid' => $USER->id,
             'course' => $args->courseid,
             'token' => $token,
             'timecreated' => time())
