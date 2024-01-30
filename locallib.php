@@ -153,9 +153,12 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
     $result = $curl->post($endpoint, $params);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
-        $r = $curl->get_raw_response();
-        return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
-              "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+        if ($r = $curl->get_raw_response()) {
+            return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
+                "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+        } else {
+            return "N";
+        }
     }
 
     if (file_exists($cookiesfile)) {
